@@ -1,0 +1,14 @@
+#!/usr/bin/env ruby
+
+require './mdocker.rb'
+
+mdocker_command = ARGV.size > 0 ? ARGV[0] : nil
+case mdocker_command
+  when 'run'
+    user_command = ARGV.drop(1)
+    rc = MDocker.run(Dir.pwd, 'docker', user_command)
+    exit rc
+  else
+    puts "unknown command '#{mdocker_command}'"
+    exit 1
+end
