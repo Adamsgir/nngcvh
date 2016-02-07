@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require './mdocker.rb'
+require File.expand_path(File.dirname(__FILE__) + '/mdocker.rb')
 
 mdocker_command = ARGV.size > 0 ? ARGV[0] : nil
 case mdocker_command
