@@ -15,7 +15,7 @@ module MDocker
 
   class Project
 
-    attr_reader :hash, :home_directory, :working_directory, :hostname, :images, :name
+    attr_reader :hash, :home_directory, :working_directory, :hostname, :images, :name, :ports
 
     def initialize(config, hash_path, base_paths)
       @hash_path = hash_path
@@ -30,6 +30,7 @@ module MDocker
       @name = config['project']
       @working_directory = config['working_directory']
       @home_directory = config['home_directory']
+      @ports = config['ports']
 
       @images = load_project(config, base_paths)
       @mtime = compute_mtime(config)
@@ -83,13 +84,22 @@ module MDocker
         build project
         run project
       else
-        MDocker.run_command(
-            "#{@docker_path} run --rm -t" +
+        port_mappings = ''
+        unless project.ports.nil?
+          project.ports.each { |port_mapping|
+            port_mappings += " -p #{port_mapping}"
+          }
+        end
+        command =
+            "#{@docker_path} run --rm -ti" +
             " -h #{Shellwords.escape project.hostname }" +
             " -v #{Shellwords.escape project.home_directory }:#{Shellwords.escape project.home_directory}" +
             " -w #{Shellwords.escape project.working_directory}" +
+            port_mappings +
             " #{project.hash}" +
-            " #{@command.map { |c| Shellwords.escape c }.join(' ')}", nil, false)
+            " #{@command.map { |c| Shellwords.escape c }.join(' ')}"
+        puts command
+        system(command)
       end
     end
 
@@ -225,10 +235,26 @@ module MDocker
     end
   end
 
+  def self.look_up(base_path, file_name)
+    if File.readable? base_path + File::SEPARATOR + file_name
+      base_path
+    else
+      if base_path == '/' or base_path == ''
+        nil
+      else
+        look_up(File.dirname(base_path), file_name)
+      end
+    end
+  end
+
   def self.run(path, docker_path, command)
     path = File.expand_path path
-    yaml_path = path + File::SEPARATOR + 'mdocker.yml'
-    hash_path = path + File::SEPARATOR + '.mdocker.uid'
+    looked_up_path = MDocker.look_up(path, 'mdocker.yml')
+    if looked_up_path.nil?
+      raise "cannot locate 'mdocker.yml' file up the hierarchy"
+    end
+    yaml_path = looked_up_path + File::SEPARATOR + 'mdocker.yml'
+    hash_path = looked_up_path + File::SEPARATOR + '.mdocker.uid'
 
     script_file = File.expand_path __FILE__
     script_dir = File.dirname script_file
@@ -236,7 +262,7 @@ module MDocker
     config = YAML.load_file yaml_path
     config['mtime'] = [File.mtime(yaml_path), File.mtime(script_file)].max
     config['home_directory'] = Dir.home
-    config['working_directory'] = File.expand_path Dir.pwd
+    config['working_directory'] = path
 
     user_name = Etc.getlogin
     user_info = Etc.getpwnam user_name
@@ -255,7 +281,7 @@ module MDocker
     }
     config = config.deep_merge user_config
 
-    base_paths = [File.expand_path(path + File::SEPARATOR + '.mdocker')]
+    base_paths = [File.expand_path(looked_up_path + File::SEPARATOR + '.mdocker')]
     unless ENV['MDOCKER_REPO'].nil?
       base_paths.push File.expand_path ENV['MDOCKER_REPO']
     end

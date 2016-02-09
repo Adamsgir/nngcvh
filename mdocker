@@ -2,13 +2,20 @@
 
 require File.expand_path(File.dirname(__FILE__) + '/mdocker.rb')
 
-mdocker_command = ARGV.size > 0 ? ARGV[0] : nil
+mdocker_command = ARGV.size > 0 ? ARGV[0] : 'run'
 case mdocker_command
   when 'run'
     user_command = ARGV.drop(1)
-    rc = MDocker.run(Dir.pwd, 'docker', user_command)
-    exit rc
+    if user_command.nil? or user_command.size == 0
+      user_command = %w(/bin/bash -l)
+    end
+    begin
+      exit MDocker.run(Dir.pwd, 'docker', user_command)
+    rescue Exception => e
+      STDERR.puts 'mdocker: ' + e.message
+      exit 1
+    end
   else
-    puts "unknown command '#{mdocker_command}'"
+    STDERR.puts "mdocker: unknown command '#{mdocker_command}'"
     exit 1
 end
