@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require File.expand_path(File.dirname(__FILE__) + '/mdocker.rb')
+require 'mdocker'
 
 mdocker_command = ARGV.size > 0 ? ARGV[0] : 'run'
 case mdocker_command
@@ -10,7 +10,7 @@ case mdocker_command
       user_command = %w(/bin/bash -l)
     end
     begin
-      exit MDocker.run(Dir.pwd, 'docker', user_command)
+      exit MDocker::Base.new.run(Dir.pwd, 'docker', user_command)
     rescue Exception => e
       STDERR.puts 'mdocker: ' + e.message
       exit 1

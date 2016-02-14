@@ -1,0 +1,13 @@
+Gem::Specification.new do |s|
+  s.name = 'mdocker'
+  s.version = '0.0.0'
+  s.date = '2016-02-14'
+  s.summary = 'MDocker'
+  s.description = 'MDocker tool for Docker'
+  s.authors = 'TMate Software'
+
+  s.required_ruby_version = '>=2.1.0'
+
+  s.files = Dir['{bin,lib,data}/**/*']
+  s.executables << 'mdocker'
+end
