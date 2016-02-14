@@ -25,7 +25,7 @@ module MDocker
           }
         end
 
-      origin.nil? ? nil : MDocker::RepositoryLock.new(origin, get_lock_path(origin))
+      origin.nil? ? nil : MDocker::RepositoryObject.new(origin, get_lock_path(origin))
     end
 
     private

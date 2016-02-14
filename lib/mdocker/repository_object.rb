@@ -1,5 +1,5 @@
 module MDocker
-  class RepositoryLock
+  class RepositoryObject
 
     attr_reader :origin, :lock_path
 

@@ -39,14 +39,14 @@ class RepositoryTest < Test::Unit::TestCase
         .mdocker/dockerfiles/file
         project/.mdocker/dockerfiles/file
       ).each { |path|
-      lock = repository.get_lock(fixture.expand_path(path))
-      assert_instance_of MDocker::RepositoryLock, lock
+      obj = repository.get_lock(fixture.expand_path(path))
+      assert_instance_of MDocker::RepositoryObject, obj
     }
     %w(
         directory_roaming
       ).each { |path|
-      lock = repository.get_lock(fixture.expand_path(path))
-      assert_instance_of MDocker::RepositoryLock, lock
+      obj = repository.get_lock(fixture.expand_path(path))
+      assert_instance_of MDocker::RepositoryObject, obj
     }
   end
 
@@ -79,9 +79,9 @@ class RepositoryTest < Test::Unit::TestCase
         directory_project/Dockerfile
         directory_global/Dockerfile
       ).each { |path|
-      lock = repository.get_lock(path)
-      assert_not_nil lock
-      assert_instance_of MDocker::RepositoryLock, lock
+      obj = repository.get_lock(path)
+      assert_not_nil obj
+      assert_instance_of MDocker::RepositoryObject, obj
     }
 
     %w(
@@ -90,9 +90,9 @@ class RepositoryTest < Test::Unit::TestCase
         directory_global
         directory/sub
       ).each { |path|
-      lock = repository.get_lock(path)
-      assert_not_nil lock
-      assert_instance_of MDocker::RepositoryLock, lock
+      obj = repository.get_lock(path)
+      assert_not_nil obj
+      assert_instance_of MDocker::RepositoryObject, obj
     }
   end
 
@@ -103,21 +103,21 @@ class RepositoryTest < Test::Unit::TestCase
     project_repository_path =fixture.expand_path @default_repository_paths[0]
     global_repository_path = fixture.expand_path @default_repository_paths[1]
 
-    lock = repository.get_lock 'file'
-    assert_equal true, lock.origin.start_with?(project_repository_path + File::SEPARATOR)
-    assert_equal true, lock.lock_path.start_with?(global_repository_path + File::SEPARATOR)
+    obj = repository.get_lock 'file'
+    assert_equal true, obj.origin.start_with?(project_repository_path + File::SEPARATOR)
+    assert_equal true, obj.lock_path.start_with?(global_repository_path + File::SEPARATOR)
 
-    lock = repository.get_lock 'file_global'
-    assert_equal true, lock.origin.start_with?(global_repository_path + File::SEPARATOR)
-    assert_equal true, lock.lock_path.start_with?(global_repository_path + File::SEPARATOR)
+    obj = repository.get_lock 'file_global'
+    assert_equal true, obj.origin.start_with?(global_repository_path + File::SEPARATOR)
+    assert_equal true, obj.lock_path.start_with?(global_repository_path + File::SEPARATOR)
 
-    lock = repository.get_lock 'file_project'
-    assert_equal true, lock.origin.start_with?(project_repository_path + File::SEPARATOR)
-    assert_equal true, lock.lock_path.start_with?(global_repository_path + File::SEPARATOR)
+    obj = repository.get_lock 'file_project'
+    assert_equal true, obj.origin.start_with?(project_repository_path + File::SEPARATOR)
+    assert_equal true, obj.lock_path.start_with?(global_repository_path + File::SEPARATOR)
 
-    lock = repository.get_lock(fixture.expand_path 'file_roaming')
-    assert_equal lock.origin, fixture.expand_path('file_roaming')
-    assert_equal true, lock.lock_path.start_with?(global_repository_path + File::SEPARATOR)
+    obj = repository.get_lock(fixture.expand_path 'file_roaming')
+    assert_equal obj.origin, fixture.expand_path('file_roaming')
+    assert_equal true, obj.lock_path.start_with?(global_repository_path + File::SEPARATOR)
   end
 
 end
