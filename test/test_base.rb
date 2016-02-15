@@ -4,10 +4,11 @@ module MDocker
     DEFAULT_FIXTURE_NAME = 'default'
     DEFAULT_FILE_NAME = 'Dockerfile'
     DEFAULT_LOCATIONS = %w(project/.mdocker/dockerfiles .mdocker/dockerfiles)
+    DEFAULT_REPOSITORY_LOCATION = DEFAULT_LOCATIONS.last
 
     def setup
       @default_fixture = create_default_fixture
-      @default_repository = create_repository(@default_fixture, default_repository_paths)
+      @default_repository = create_default_repository(@default_fixture)
     end
 
     protected
@@ -20,16 +21,27 @@ module MDocker
       MDocker::Fixture.create DEFAULT_FIXTURE_NAME
     end
 
-    def create_default_repository(fixture)
-      create_repository(fixture, default_repository_paths)
+    def create_absolute_path_provider(file_name=DEFAULT_FILE_NAME)
+      AbsolutePathProvider.new(file_name)
     end
 
-    def create_repository(fixture, locations=DEFAULT_LOCATIONS, filename=DEFAULT_FILE_NAME)
-      providers = [
-          AbsolutePathProvider.new(filename),
-          RelativePathProvider.new(filename, fixture.expand_paths(locations))
+    def create_relative_path_provider(fixture, locations=DEFAULT_LOCATIONS, file_name=DEFAULT_FILE_NAME)
+      RelativePathProvider.new(file_name, fixture.expand_paths(locations))
+    end
+
+    def create_all_providers(fixture, locations=DEFAULT_LOCATIONS, file_name=DEFAULT_FILE_NAME)
+      [
+          create_absolute_path_provider(file_name),
+          create_relative_path_provider(fixture, locations, file_name)
       ]
-      Repository.new(fixture.expand_path(locations.last), providers)
+    end
+
+    def create_default_repository(fixture, locations=DEFAULT_LOCATIONS, file_name=DEFAULT_FILE_NAME)
+      create_repository(fixture, create_all_providers(fixture, locations, file_name))
+    end
+
+    def create_repository(fixture, providers, location=DEFAULT_REPOSITORY_LOCATION)
+      Repository.new(fixture.expand_path(location), providers)
     end
   end
 end
