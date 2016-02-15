@@ -5,9 +5,10 @@ module MDocker
 
     attr_reader :origin, :lock_path
 
-    def initialize(origin, lock_path)
+    def initialize(origin, lock_path, provider)
       @origin = origin
       @lock_path = lock_path
+      @provider = provider
     end
 
     def outdated?
@@ -49,7 +50,7 @@ module MDocker
     protected
 
     def fetch_origin_contents
-      File.read(origin)
+      @provider.fetch_origin_contents(@origin)
     end
 
     private
