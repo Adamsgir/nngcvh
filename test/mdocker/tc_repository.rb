@@ -3,7 +3,7 @@ require_relative '../test_helper'
 class RepositoryTest < Test::Unit::TestCase
 
   def setup
-    @default_fixture = MDocker::Fixture.new('default')
+    @default_fixture = MDocker::Fixture::create('default')
     @default_file_name = 'Dockerfile'
     @default_repository_paths = %w(project/.mdocker/dockerfiles .mdocker/dockerfiles)
     @default_repository = MDocker::Repository.new('Dockerfile', @default_fixture.expand_paths(@default_repository_paths))
@@ -39,13 +39,13 @@ class RepositoryTest < Test::Unit::TestCase
         .mdocker/dockerfiles/file
         project/.mdocker/dockerfiles/file
       ).each { |path|
-      obj = repository.get_lock(fixture.expand_path(path))
+      obj = repository.get_object(fixture.expand_path(path))
       assert_instance_of MDocker::RepositoryObject, obj
     }
     %w(
         directory_roaming
       ).each { |path|
-      obj = repository.get_lock(fixture.expand_path(path))
+      obj = repository.get_object(fixture.expand_path(path))
       assert_instance_of MDocker::RepositoryObject, obj
     }
   end
@@ -62,7 +62,7 @@ class RepositoryTest < Test::Unit::TestCase
         directory_roaming/yyy
         .mdocker/dockerfiles/Dockerfile
       ).each { |path|
-      assert_nil repository.get_lock(fixture.expand_path path)
+      assert_nil repository.get_object(fixture.expand_path path)
     }
   end
 
@@ -79,7 +79,7 @@ class RepositoryTest < Test::Unit::TestCase
         directory_project/Dockerfile
         directory_global/Dockerfile
       ).each { |path|
-      obj = repository.get_lock(path)
+      obj = repository.get_object(path)
       assert_not_nil obj
       assert_instance_of MDocker::RepositoryObject, obj
     }
@@ -90,7 +90,7 @@ class RepositoryTest < Test::Unit::TestCase
         directory_global
         directory/sub
       ).each { |path|
-      obj = repository.get_lock(path)
+      obj = repository.get_object(path)
       assert_not_nil obj
       assert_instance_of MDocker::RepositoryObject, obj
     }
@@ -103,19 +103,19 @@ class RepositoryTest < Test::Unit::TestCase
     project_repository_path =fixture.expand_path @default_repository_paths[0]
     global_repository_path = fixture.expand_path @default_repository_paths[1]
 
-    obj = repository.get_lock 'file'
+    obj = repository.get_object 'file'
     assert_equal true, obj.origin.start_with?(project_repository_path + File::SEPARATOR)
     assert_equal true, obj.lock_path.start_with?(global_repository_path + File::SEPARATOR)
 
-    obj = repository.get_lock 'file_global'
+    obj = repository.get_object 'file_global'
     assert_equal true, obj.origin.start_with?(global_repository_path + File::SEPARATOR)
     assert_equal true, obj.lock_path.start_with?(global_repository_path + File::SEPARATOR)
 
-    obj = repository.get_lock 'file_project'
+    obj = repository.get_object 'file_project'
     assert_equal true, obj.origin.start_with?(project_repository_path + File::SEPARATOR)
     assert_equal true, obj.lock_path.start_with?(global_repository_path + File::SEPARATOR)
 
-    obj = repository.get_lock(fixture.expand_path 'file_roaming')
+    obj = repository.get_object(fixture.expand_path 'file_roaming')
     assert_equal obj.origin, fixture.expand_path('file_roaming')
     assert_equal true, obj.lock_path.start_with?(global_repository_path + File::SEPARATOR)
   end

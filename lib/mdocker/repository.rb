@@ -13,7 +13,7 @@ module MDocker
       end
     end
 
-    def get_lock(location)
+    def get_object(location)
       origin =
         if location.start_with? '/'
           resolve_origin_file location
