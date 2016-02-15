@@ -2,6 +2,9 @@ module MDocker
   class PathProvider < RepositoryProvider
 
     def initialize(file_name)
+      if self.class == PathProvider
+        raise 'PathProvider is an abstract class'
+      end
       @file_name = file_name
     end
 

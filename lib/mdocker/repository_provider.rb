@@ -1,6 +1,12 @@
 module MDocker
   class RepositoryProvider
 
+    def initialize
+      if self.class == RepositoryProvider
+        raise 'RepositoryProvider is an abstract class'
+      end
+    end
+
     def applicable?(location)
       !location.nil?
     end
@@ -10,7 +16,7 @@ module MDocker
     end
 
     def fetch_origin_contents(resolved_location)
-      nil
+      raise 'RepositoryProvider.fetch_origin_contents is an abstract method'
     end
 
   end
