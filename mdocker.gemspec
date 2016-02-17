@@ -11,5 +11,6 @@ Gem::Specification.new do |s|
   s.files = Dir['{bin,lib,data}/**/*']
   s.executables << 'mdocker'
 
+  s.add_runtime_dependency 'git', '>=1.2.9.1'
   s.add_development_dependency 'test-unit', '>=2.1.0'
 end

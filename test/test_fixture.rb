@@ -1,4 +1,6 @@
 require 'tmpdir'
+require 'find'
+require 'git'
 
 module MDocker
 
@@ -17,17 +19,15 @@ module MDocker
     end
 
     def expand_path(path)
-      expand_paths([path])[0]
+      File.expand_path File.join(@root_path, path)
     end
 
     def expand_paths(paths=[])
-      paths.map { |path|
-        File.expand_path(File.join(@root_path, path))
-      }
+      paths.map { |path| expand_path path }
     end
 
     def contents(path)
-      File.read(expand_path(path))
+      File.read expand_path(path)
     end
 
     def exists?(path)
@@ -42,22 +42,56 @@ module MDocker
       File.directory? expand_path(path)
     end
 
-    def clone(&block)
+    def copy
       tmpdir = Dir.mktmpdir(%w(mdocker. .fixture))
-      FileUtils::copy_entry @root_path, tmpdir
+
+      Find.find(@root_path) do |path|
+        if path == @root_path
+          next
+        elsif File.directory?(path) && path.end_with?('.git')
+          copy_git_repository path, tmpdir
+        else
+          copy_directory path, tmpdir
+        end
+        Find.prune
+      end
+
       clone = Fixture.new(tmpdir, true)
-      if block.nil?
-        clone
-      else
-        block.call(clone)
+      if block_given?
+        yield clone
         clone.delete
       end
+      clone
     end
 
     def delete
       if @cloned
         FileUtils::remove_entry @root_path
       end
+    end
+
+    private
+
+    def copy_directory(source, target)
+      FileUtils::cp_r source, target
+    end
+
+    def copy_git_repository(source, target)
+      name = File.basename source, '.git'
+
+      git = Git::init File.join(target, name)
+      Dir[File.join(source, 'branch_*')].each do |branch_path|
+        FileUtils::cp_r File.join(branch_path, '.'), git.dir.path
+
+        branch_name = File.basename branch_path
+        /^branch_(?<branch_name>.+)$/ =~ branch_name
+        git.branch branch_name
+        git.add(all:true)
+        git.commit("branch '#{branch_name}' added")
+      end
+
+      Git::clone(git.dir.path, File.join(target, name + '.git'), {bare: true})
+      FileUtils::remove_entry git.dir.path
     end
   end
 end

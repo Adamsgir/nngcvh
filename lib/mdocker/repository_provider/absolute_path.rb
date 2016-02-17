@@ -6,7 +6,7 @@ module MDocker
     end
 
     def applicable?(location)
-      super(location) && location.start_with?('/')
+      super(location) && location.start_with?('/') || location.start_with?('~/')
     end
 
     def resolve(location)
