@@ -19,30 +19,25 @@ module MDocker
           obj = repository.get_object(location)
 
           assert_not_nil obj
-          assert_equal false, obj.has_contents?
-          assert_equal true, obj.outdated?
+          assert_false obj.has_contents?
+          assert_true obj.outdated?
 
-          updated = obj.fetch
+          assert_true obj.fetch
 
-          assert_equal true, updated
+          assert_false obj.outdated?
+          assert_true obj.has_contents?
 
-          assert_equal false, obj.outdated?
-          assert_equal true, obj.has_contents?
-
-          updated = obj.fetch
-          assert_equal false, updated
+          assert_false obj.fetch
 
           File.write(obj.origin, File.read(obj.origin) + ' modified')
 
-          assert_equal true, obj.has_contents?
-          assert_equal true, obj.outdated?
+          assert_true obj.has_contents?
+          assert_true obj.outdated?
 
-          updated = obj.fetch
+          assert_true obj.fetch
 
-          assert_equal true, updated
-
-          assert_equal false, obj.outdated?
-          assert_equal true, obj.has_contents?
+          assert_false   obj.outdated?
+          assert_true obj.has_contents?
         }
 
       }
@@ -54,13 +49,13 @@ module MDocker
       obj = repository.get_object('file://' + fixture.expand_path('repository.git') + '|master|file')
 
       assert_not_nil obj
-      assert_equal false, obj.has_contents?
-      assert_equal true, obj.outdated?
+      assert_false obj.has_contents?
+      assert_true obj.outdated?
 
       updated = obj.fetch
 
-      assert_equal true, updated
-      assert_equal true, obj.has_contents?
+      assert_true updated
+      assert_true obj.has_contents?
       assert_equal 'file', obj.contents
     end
 
@@ -73,15 +68,10 @@ module MDocker
 
       [obj1, obj2, obj3].each do |obj|
         assert_not_nil obj
-        assert_equal false, obj.has_contents?
-        assert_equal true, obj.outdated?
+        assert_false obj.has_contents?
+        assert_true obj.outdated?
 
-        begin
-          obj.fetch
-          assert_fail_assertion
-        rescue
-          #
-        end
+        assert_raise { obj.fetch }
       end
 
     end
