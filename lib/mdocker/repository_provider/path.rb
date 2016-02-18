@@ -1,7 +1,7 @@
 module MDocker
   class PathProvider < RepositoryProvider
 
-    def initialize(file_name, repositories=[''])
+    def initialize(file_name, repositories)
       @file_name = file_name
       @repositories = repositories
     end

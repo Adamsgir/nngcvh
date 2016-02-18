@@ -2,7 +2,7 @@ module MDocker
   class AbsolutePathProvider < PathProvider
 
     def initialize(file_name)
-      super(file_name)
+      super(file_name, [''])
     end
 
     def applicable?(location)
