@@ -71,11 +71,14 @@ module MDocker
     def test_git_object_load_fail
       @default_fixture.copy do |fixture|
         repository = create_default_repository(fixture)
-        obj1 = repository.get_object('file://' + fixture.expand_path('missing.git') + '|master|file')
-        obj2 = repository.get_object('file://' + fixture.expand_path('repository.git') + '|master|missing')
-        obj3 = repository.get_object('file://' + fixture.expand_path('repository.git') + '|missing|file')
+        objs = [
+          'file://' + fixture.expand_path('missing.git') + '|master|file',
+          'file://' + fixture.expand_path('repository.git') + '|master|missing',
+          'file://' + fixture.expand_path('repository.git') + '|missing|file'
+        ]
 
-        [obj1, obj2, obj3].each do |obj|
+        objs.each do |location|
+          obj = repository.get_object(location)
           assert_not_nil obj
           assert_false obj.has_contents?
           assert_true obj.outdated?
