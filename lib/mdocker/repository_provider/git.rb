@@ -13,13 +13,11 @@ module MDocker
     end
 
     def resolve(location)
-      resolved = {
+      {
         url: location[:url],
         ref: location[:ref].to_s.strip.empty? ? 'HEAD' : location[:ref],
         path: location[:path].to_s.strip.empty? ? @file_name : location[:path]
       }
-      resolved[:to_s] = resolved.values.join('|')
-      resolved
     end
 
     def fetch_origin_contents(location)
