@@ -8,7 +8,7 @@ module MDocker
     end
 
     def applicable?(location)
-      !location.nil?
+      location.is_a?(Hash)
     end
 
     def resolve(location)

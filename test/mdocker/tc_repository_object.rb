@@ -7,14 +7,14 @@ module MDocker
       @default_fixture.copy { |fixture|
         repository = create_default_repository(fixture)
         [
-          fixture.expand_path('file_roaming'),
-          fixture.expand_path('directory_roaming'),
-          'file',
-          'file_project',
-          'file_global',
-          'directory',
-          'directory_project',
-          'directory_global',
+          {path: fixture.expand_path('file_roaming')},
+          {path: fixture.expand_path('directory_roaming')},
+          {path: 'file'},
+          {path: 'file_project'},
+          {path: 'file_global'},
+          {path: 'directory'},
+          {path: 'directory_project'},
+          {path: 'directory_global'},
         ].each { |location|
           obj = repository.get_object(location)
 
@@ -29,7 +29,12 @@ module MDocker
 
           assert_false obj.fetch
 
-          File.write(obj.origin, File.read(obj.origin) + ' modified')
+          obj.origin[:paths].each do |path|
+            if File.directory? path
+              path = File.join(path, DEFAULT_FILE_NAME)
+            end
+            break File.write(path, File.read(path) + ' modified') if File.file?(path)
+          end
 
           assert_true obj.has_contents?
           assert_true obj.outdated?
@@ -47,10 +52,9 @@ module MDocker
       @default_fixture.copy do |fixture|
         repository = create_default_repository(fixture)
         objs = [
-          'file://' + fixture.expand_path('repository.git') + '|master|file',
-          'file://' + fixture.expand_path('repository.git') + '|master',
-          'file://' + fixture.expand_path('repository.git') + '|master|directory',
-          'file://' + fixture.expand_path('repository.git') + '|master|directory/Dockerfile'
+          {url: fixture.git_url('repository.git'), ref: 'master', path:'file'},
+          {url: fixture.git_url('repository.git'), ref: 'master', path:'directory'},
+          {url: fixture.git_url('repository.git'), ref: 'master', path:'directory/Dockerfile'},
         ]
 
         objs.each do |location|
@@ -72,9 +76,9 @@ module MDocker
       @default_fixture.copy do |fixture|
         repository = create_default_repository(fixture)
         objs = [
-          'file://' + fixture.expand_path('missing.git') + '|master|file',
-          'file://' + fixture.expand_path('repository.git') + '|master|missing',
-          'file://' + fixture.expand_path('repository.git') + '|missing|file'
+          {url: fixture.git_url('missing.git'), ref: 'master', path:'file'},
+          {url: fixture.git_url('repository.git'), ref: 'master', path:'missing'},
+          {url: fixture.git_url('repository.git'), ref: 'missing', path:'file'},
         ]
 
         objs.each do |location|

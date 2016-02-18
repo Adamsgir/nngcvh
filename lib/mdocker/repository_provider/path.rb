@@ -1,25 +1,31 @@
 module MDocker
   class PathProvider < RepositoryProvider
 
-    def initialize(file_name)
-      if self.class == PathProvider
-        raise 'PathProvider is an abstract class'
-      end
+    def initialize(file_name, repositories=[''])
       @file_name = file_name
+      @repositories = repositories
     end
 
-    def fetch_origin_contents(resolved_location)
-      resolved_location.nil? ? nil : File.read(resolved_location)
+    def applicable?(location)
+      super(location) && location[:path]
     end
 
-    protected
+    def resolve(location)
+      paths = @repositories.map { |path| File.expand_path File.join(path, location[:path]) }
+      {
+        paths: paths,
+        to_s: paths.join(':')
+      }
+    end
 
-    def resolve_file_path(path)
-      if File.directory?(path)
-        path = File.join(path, @file_name)
+    def fetch_origin_contents(location)
+      location[:paths].detect do |path|
+        if File.directory? path
+          path = File.join path, @file_name
+        end
+        break File.read(path) if File.file?(path) && File.readable?(path)
       end
-      path
-      # File.file?(path) && File.readable?(path) ? path : nil
     end
+
   end
 end

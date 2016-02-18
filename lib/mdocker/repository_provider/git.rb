@@ -9,32 +9,42 @@ module MDocker
     end
 
     def applicable?(location)
-      super(location) && location.start_with?('file://')
+      super(location) && location.is_a?(Hash) && location[:url]
     end
 
-    def fetch_origin_contents(resolved_location)
-      parts = resolved_location.split('|')
+    def resolve(location)
+      resolved = {
+        url: location[:url],
+        ref: location[:ref].to_s.strip.empty? ? 'HEAD' : location[:ref],
+        path: location[:path].to_s.strip.empty? ? @file_name : location[:path]
+      }
+      resolved[:to_s] = resolved.values.join('|')
+      resolved
+    end
 
-      url = parts[0]
+    def fetch_origin_contents(location)
+      url = location[:url]
+      ref = location[:ref]
+      path = location[:path]
 
-      ref = parts[1]
-      ref = 'HEAD' if ref == '' || ref.nil?
-
-      path = parts[2]
-      path = '' if parts[2].nil?
-
+      tmp_location_created = false
       unless File.directory? @tmp_location
         FileUtils::mkdir_p @tmp_location
+        tmp_location_created = true
       end
 
-      tmpdir = Dir.mktmpdir(%w(mdocker. .git), @tmp_location)
       begin
+        tmpdir = Dir.mktmpdir(%w(mdocker. .git), @tmp_location)
         git = Git::clone(url, tmpdir, {depth: 1, bare: true})
         obj = git.object(ref + ':' + path)
         if obj.nil? || obj.tree?
-          obj = git.object(ref + ':' + (path == '' ? '' : path + '/') + @file_name)
+          obj = git.object(ref + ':' + path + '/' + @file_name)
         end
         obj.blob? ? obj.contents : nil
+      rescue
+        if tmp_location_created
+          FileUtils::rm_r @tmp_location
+        end
       ensure
         if File.exist? tmpdir
           FileUtils::rm_r tmpdir

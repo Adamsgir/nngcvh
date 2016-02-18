@@ -20,7 +20,8 @@ module MDocker
     private
 
     def get_lock_path(origin)
-      File.join(@repository_path, '.locks', Digest::SHA1.hexdigest(origin))
+      hash = origin.is_a?(Hash) ? (origin[:to_s] || origin.to_s) : origin
+      File.join(@repository_path, '.locks', Digest::SHA1.hexdigest(hash))
     end
 
   end

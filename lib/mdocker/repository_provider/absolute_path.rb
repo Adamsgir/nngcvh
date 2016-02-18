@@ -6,13 +6,8 @@ module MDocker
     end
 
     def applicable?(location)
-      super(location) && location.start_with?('/') || location.start_with?('~/')
-    end
-
-    def resolve(location)
-      resolve_file_path(File.expand_path location)
+      super(location) && (location[:path].start_with?('/') || location[:path].start_with?('~/'))
     end
 
   end
-
 end

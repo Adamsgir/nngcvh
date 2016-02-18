@@ -26,7 +26,7 @@ module MDocker
     end
 
     def create_relative_path_provider(fixture, locations=DEFAULT_LOCATIONS, file_name=DEFAULT_FILE_NAME)
-      RelativePathProvider.new(file_name, fixture.expand_paths(locations))
+      PathProvider.new(file_name, fixture.expand_paths(locations))
     end
 
     def create_git_provider(file_name=DEFAULT_FILE_NAME, tmp_location=nil)
@@ -35,8 +35,8 @@ module MDocker
 
     def create_all_providers(fixture, locations=DEFAULT_LOCATIONS, file_name=DEFAULT_FILE_NAME)
       [
-          create_absolute_path_provider(file_name),
           create_git_provider(file_name, fixture.expand_path('.mdocker/.remote')),
+          create_absolute_path_provider(file_name),
           create_relative_path_provider(fixture, locations, file_name)
       ]
     end

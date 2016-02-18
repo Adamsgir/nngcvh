@@ -18,6 +18,10 @@ module MDocker
       @cloned = cloned
     end
 
+    def git_url(repository_path)
+      'file://' + expand_path(repository_path)
+    end
+
     def expand_path(path)
       File.expand_path File.join(@root_path, path)
     end
