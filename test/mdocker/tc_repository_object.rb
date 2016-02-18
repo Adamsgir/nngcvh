@@ -16,7 +16,7 @@ module MDocker
           {path: 'directory_project'},
           {path: 'directory_global'},
         ].each { |location|
-          obj = repository.get_object(location)
+          obj = repository.object(location)
 
           assert_not_nil obj
           assert_false obj.has_contents?
@@ -58,7 +58,7 @@ module MDocker
         ]
 
         objs.each do |location|
-          obj = repository.get_object(location)
+          obj = repository.object(location)
           assert_not_nil obj
           assert_false obj.has_contents?
           assert_true obj.outdated?
@@ -82,7 +82,7 @@ module MDocker
         ]
 
         objs.each do |location|
-          obj = repository.get_object(location)
+          obj = repository.object(location)
           assert_not_nil obj
           assert_false obj.has_contents?
           assert_true obj.outdated?

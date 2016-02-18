@@ -8,7 +8,7 @@ module MDocker
       @repository_path = repository_path
     end
 
-    def get_object(location)
+    def object(location)
       @providers.detect { |provider|
         if provider.applicable?(location)
           origin = provider.resolve(location)

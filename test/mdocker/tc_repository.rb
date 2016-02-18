@@ -14,7 +14,7 @@ module MDocker
         {path: 'project/.mdocker/dockerfiles/file'}
       ].each { |location|
         location[:path] = fixture.expand_path(location[:path])
-        obj = repository.get_object(location)
+        obj = repository.object(location)
         assert_instance_of MDocker::RepositoryObject, obj
       }
       [
@@ -39,7 +39,7 @@ module MDocker
         {path: '.mdocker/dockerfiles/Dockerfile'}
       ].each { |location|
         location[:path] = fixture.expand_path location[:path]
-        obj = repository.get_object(location)
+        obj = repository.object(location)
         assert_true obj.outdated?
         assert_false obj.has_contents?
         assert_raise { obj.fetch }
@@ -59,7 +59,7 @@ module MDocker
         {path: 'directory_project/Dockerfile'},
         {path: 'directory_global/Dockerfile'}
       ].each { |location|
-        obj = repository.get_object(location)
+        obj = repository.object(location)
         assert_not_nil obj
         assert_instance_of MDocker::RepositoryObject, obj
       }
@@ -82,7 +82,7 @@ module MDocker
 
       global_repository_path = fixture.expand_path default_repository_paths[1]
 
-      obj = repository.get_object({path: 'file'})
+      obj = repository.object({path: 'file'})
       assert_true obj.lock_path.start_with?(global_repository_path + File::SEPARATOR)
 
       obj = repository.get_object({path: 'file_global'})
