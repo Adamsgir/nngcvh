@@ -1,52 +1,23 @@
 module MDocker
-  class TestBase < Test::Unit::TestCase
+  module TestBase
 
     DEFAULT_FIXTURE_NAME = 'default'
     DEFAULT_FILE_NAME = 'Dockerfile'
-    DEFAULT_LOCATIONS = %w(project/.mdocker/dockerfiles .mdocker/dockerfiles)
-    DEFAULT_REPOSITORY_LOCATION = DEFAULT_LOCATIONS.last
+    DEFAULT_REPOSITORY_PATHS = %w(project/.mdocker/dockerfiles .mdocker/dockerfiles)
+    DEFAULT_LOCK_PATH = '.mdocker/locks'
+    DEFAULT_TMP_LOCATION = 'project/.mdocker/tmp'
 
-    def setup
-      @default_fixture = create_default_fixture
-      @default_repository = create_default_repository(@default_fixture)
+    def with_repository(fixture_name=DEFAULT_FIXTURE_NAME, file_name=DEFAULT_FILE_NAME, repository_paths=DEFAULT_REPOSITORY_PATHS, locks_path=DEFAULT_LOCK_PATH, git_tmp_path=DEFAULT_TMP_LOCATION)
+      Fixture.create(fixture_name).copy do |fixture|
+        providers = [
+            GitRepositoryProvider.new(file_name, git_tmp_path),
+            AbsolutePathProvider.new(file_name),
+            PathProvider.new(file_name, fixture.expand_paths(repository_paths)),
+        ]
+        repository = Repository.new(fixture.expand_path(locks_path), providers)
+        yield fixture, repository
+      end
     end
 
-    protected
-
-    def default_repository_paths
-      DEFAULT_LOCATIONS
-    end
-
-    def create_default_fixture
-      MDocker::Fixture.create DEFAULT_FIXTURE_NAME
-    end
-
-    def create_absolute_path_provider(file_name=DEFAULT_FILE_NAME)
-      AbsolutePathProvider.new(file_name)
-    end
-
-    def create_relative_path_provider(fixture, locations=DEFAULT_LOCATIONS, file_name=DEFAULT_FILE_NAME)
-      PathProvider.new(file_name, fixture.expand_paths(locations))
-    end
-
-    def create_git_provider(file_name=DEFAULT_FILE_NAME, tmp_location=nil)
-      GitRepositoryProvider.new(file_name, tmp_location)
-    end
-
-    def create_all_providers(fixture, locations=DEFAULT_LOCATIONS, file_name=DEFAULT_FILE_NAME)
-      [
-          create_git_provider(file_name, fixture.expand_path('.mdocker/.remote')),
-          create_absolute_path_provider(file_name),
-          create_relative_path_provider(fixture, locations, file_name)
-      ]
-    end
-
-    def create_default_repository(fixture, locations=DEFAULT_LOCATIONS, file_name=DEFAULT_FILE_NAME)
-      create_repository(fixture, create_all_providers(fixture, locations, file_name))
-    end
-
-    def create_repository(fixture, providers, location=DEFAULT_REPOSITORY_LOCATION)
-      Repository.new(fixture.expand_path(location), providers)
-    end
   end
 end

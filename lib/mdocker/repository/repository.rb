@@ -3,9 +3,9 @@ require 'digest/sha1'
 module MDocker
   class Repository
 
-    def initialize(repository_path, providers=[])
+    def initialize(locks_path, providers=[])
       @providers = providers
-      @repository_path = repository_path
+      @locks_path = locks_path
     end
 
     def object(location)
@@ -20,7 +20,7 @@ module MDocker
     private
 
     def get_lock_path(origin)
-      File.join(@repository_path, '.locks', Digest::SHA1.hexdigest(origin.to_s))
+      File.join(@locks_path, Digest::SHA1.hexdigest(origin.to_s))
     end
 
   end

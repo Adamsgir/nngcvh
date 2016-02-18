@@ -31,6 +31,9 @@ module MDocker
     def fetch
       local = fetch_local
       origin = fetch_origin
+
+      FileUtils::mkdir_p File.dirname(@lock_path)
+
       if origin[:hash].nil? || local.nil? || origin[:hash] != local[:hash]
         Dir::Tmpname::create('lock', File.dirname(@lock_path)) do |tmp_path|
           File.open(tmp_path, File::WRONLY|File::CREAT|File::EXCL) do |file|

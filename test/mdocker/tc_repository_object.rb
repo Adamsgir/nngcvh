@@ -1,11 +1,12 @@
 require_relative '../test_helper'
 
 module MDocker
-  class RepositoryObjectTest < TestBase
+  class RepositoryObjectTest < Test::Unit::TestCase
+
+    include MDocker::TestBase
 
     def test_object_load
-      @default_fixture.copy { |fixture|
-        repository = create_default_repository(fixture)
+      with_repository do |fixture, repository|
         [
           {path: fixture.expand_path('file_roaming')},
           {path: fixture.expand_path('directory_roaming')},
@@ -15,7 +16,7 @@ module MDocker
           {path: 'directory'},
           {path: 'directory_project'},
           {path: 'directory_global'},
-        ].each { |location|
+        ].each do |location|
           obj = repository.object(location)
 
           assert_not_nil obj
@@ -43,20 +44,18 @@ module MDocker
 
           assert_false   obj.outdated?
           assert_true obj.has_contents?
-        }
-
-      }
+        end
+      end
     end
 
     def test_git_object_load
-      @default_fixture.copy do |fixture|
-        repository = create_default_repository(fixture)
+      with_repository do |fixture, repository|
         objs = [
           {url: fixture.git_url('repository.git'), ref: 'master', path:'file'},
           {url: fixture.git_url('repository.git'), ref: 'master', path:'directory'},
           {url: fixture.git_url('repository.git'), path:'directory/Dockerfile'},
+          {url: fixture.git_url('repository.git')},
         ]
-
         objs.each do |location|
           obj = repository.object(location)
           assert_not_nil obj
@@ -73,14 +72,12 @@ module MDocker
     end
 
     def test_git_object_load_fail
-      @default_fixture.copy do |fixture|
-        repository = create_default_repository(fixture)
+      with_repository do |fixture, repository|
         objs = [
           {url: fixture.git_url('missing.git'), ref: 'master', path:'file'},
           {url: fixture.git_url('repository.git'), ref: 'master', path:'missing'},
           {url: fixture.git_url('repository.git'), ref: 'missing', path:'file'},
         ]
-
         objs.each do |location|
           obj = repository.object(location)
           assert_not_nil obj
@@ -90,7 +87,7 @@ module MDocker
           assert_raise { obj.fetch }
         end
       end
-
     end
+
   end
 end
