@@ -44,9 +44,10 @@ module MDocker
       end
     end
 
-    def test_object_load
+    def test_object_load(locations=nil)
+      locations = locations.nil? ?  @locations : locations
       with_repository do |fixture, repository|
-        @locations.each do |location|
+        locations.each do |location|
           contents = read_origin(fixture, location)
           obj = repository.object(expand_origin(fixture, location))
           assert_not_nil obj

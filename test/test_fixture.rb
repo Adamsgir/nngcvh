@@ -30,22 +30,6 @@ module MDocker
       paths.map { |path| expand_path path }
     end
 
-    def contents(path)
-      File.read expand_path(path)
-    end
-
-    def exists?(path)
-      File.exist? expand_path(path)
-    end
-
-    def file?(path)
-      File.file? expand_path(path)
-    end
-
-    def directory?(path)
-      File.directory? expand_path(path)
-    end
-
     def copy
       tmpdir = Dir.mktmpdir(%w(mdocker. .fixture))
 
@@ -82,16 +66,19 @@ module MDocker
 
     def copy_git_repository(source, target)
       name = File.basename source, '.git'
-
       git = Git::init File.join(target, name)
-      Dir[File.join(source, 'branch_*')].each do |branch_path|
-        FileUtils::cp_r File.join(branch_path, '.'), git.dir.path
-
+      Dir[File.join(source, 'branch_*')].each_with_index do |branch_path, index|
         branch_name = File.basename branch_path
         /^branch_(?<branch_name>.+)$/ =~ branch_name
-        git.branch branch_name
-        git.add(all:true)
+        git.checkout(branch_name, {b:true})
+        if index > 0
+          git.remove('.', {:recursive=>true})
+        end
+        FileUtils::cp_r File.join(branch_path, '.'), git.dir.path
+        git.add(:all => true)
         git.commit("branch '#{branch_name}' added")
+        git.add_tag(branch_name + '_tag')
+        git.add_tag(branch_name + '_a_tag', {message: 'tag', a: true})
       end
 
       Git::clone(git.dir.path, File.join(target, name + '.git'), {bare: true})

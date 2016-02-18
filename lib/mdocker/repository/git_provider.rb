@@ -15,7 +15,7 @@ module MDocker
     def resolve(location)
       {
         url: location[:url],
-        ref: location[:ref].to_s.strip.empty? ? 'refs/heads/master' : location[:ref],
+        ref: location[:ref].to_s.strip.empty? ? 'master' : location[:ref],
         path: location[:path].to_s.strip.empty? ? @file_name : location[:path]
       }
     end
@@ -29,7 +29,7 @@ module MDocker
 
       begin
         tmpdir = Dir.mktmpdir(%w(mdocker. .git), @tmp_location)
-        git = Git::clone(url, tmpdir, {depth: 1, bare: true})
+        git = Git::clone(url, tmpdir, {bare: true})
         obj = git.object(ref + ':' + path)
         if obj.nil? || obj.tree?
           obj = git.object(ref + ':' + path + '/' + @file_name)

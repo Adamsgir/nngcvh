@@ -8,12 +8,11 @@ module MDocker
     include MDocker::RepositoryTestBase
 
     class << self
+
+      attr_reader :tmp_directory
+
       def startup
         @tmp_directory = Dir::mktmpdir(%w(mdocker. .git))
-      end
-
-      def tmp_directory
-        @tmp_directory
       end
 
       def shutdown
@@ -26,7 +25,14 @@ module MDocker
           {url: 'repository.git', ref: 'master', path:'file'},
           {url: 'repository.git', ref: 'master', path:'directory'},
           {url: 'repository.git', path:'directory/Dockerfile'},
+          {url: 'repository.git', ref: 'branch' },
           {url: 'repository.git'},
+          {url: 'repository.git', ref: 'branch', path:'directory/Dockerfile'},
+      ]
+
+      @tag_locations = [
+          {url: 'repository.git', ref: 'branch_tag', path:'directory/Dockerfile'},
+          {url: 'repository.git', ref: 'branch_a_tag', path:'directory/Dockerfile'},
       ]
 
       @missing_locations = [
@@ -34,7 +40,12 @@ module MDocker
           {url: 'repository.git', ref: 'master', path:'missing'},
           {url: 'repository.git', ref: 'missing', path:'file'},
       ]
+
       @single_location = {url: 'repository.git', path:'directory/Dockerfile'}
+    end
+
+    def test_tag_object_load
+      test_object_load(@tag_locations)
     end
 
     # noinspection RubyUnusedLocalVariable
@@ -46,9 +57,8 @@ module MDocker
 
     def write_origin(fixture, location, contents)
       git = open_or_clone_git_repo(fixture, location)
-
-      git.reset_hard
-      git.branch(location[:ref].nil? ? 'refs/heads/master' : location[:ref])
+      ref = location[:ref].nil? ? 'master' : location[:ref]
+      git.checkout(ref)
       file_path = File.join(git.dir.path, location[:path].nil? ? 'Dockerfile' : location[:path])
       if File.directory? file_path
         file_path = File.join(file_path, 'Dockerfile')
@@ -56,15 +66,15 @@ module MDocker
       File.write(file_path, contents)
       git.add(file_path)
       git.commit('test commit')
-      git.push
+      git.push('origin', ref)
     end
 
     def read_origin(fixture, location)
       git = open_or_clone_git_repo(fixture, location)
-      ref = location[:ref].nil? ? 'refs/heads/master' : location[:ref]
+      ref = location[:ref].nil? ? 'master' : location[:ref]
       path = location[:path].nil? ? 'Dockerfile' : location[:path]
 
-      git.reset_hard
+      git.checkout(ref)
       obj = git.object(ref + ':' + path)
       if obj.tree?
         obj = git.object(ref + ':' + path + '/Dockerfile')
@@ -76,7 +86,7 @@ module MDocker
     def open_or_clone_git_repo(fixture, location)
       url = expand_origin(fixture, location)[:url]
       tmp_name = Digest::SHA1::hexdigest(url)
-      tmp_path = File.join(self.class.tmp_directory, tmp_name)
+      tmp_path = File.join(RepositoryGitTest::tmp_directory, tmp_name)
       if File.exist?(tmp_path)
         Git::open(tmp_path)
       else
