@@ -21,7 +21,7 @@ module MDocker
         {path: 'directory_roaming'}
       ].each { |location|
         location[:path] = fixture.expand_path(location[:path])
-        obj = repository.get_object(location)
+        obj = repository.object(location)
         assert_instance_of MDocker::RepositoryObject, obj
       }
     end
@@ -70,7 +70,7 @@ module MDocker
         {path: 'directory_global'},
         {path: 'directory/sub'},
       ].each { |location|
-        obj = repository.get_object(location)
+        obj = repository.object(location)
         assert_not_nil obj
         assert_instance_of MDocker::RepositoryObject, obj
       }
@@ -85,13 +85,13 @@ module MDocker
       obj = repository.object({path: 'file'})
       assert_true obj.lock_path.start_with?(global_repository_path + File::SEPARATOR)
 
-      obj = repository.get_object({path: 'file_global'})
+      obj = repository.object({path: 'file_global'})
       assert_true obj.lock_path.start_with?(global_repository_path + File::SEPARATOR)
 
-      obj = repository.get_object({path: 'file_project'})
+      obj = repository.object({path: 'file_project'})
       assert_true obj.lock_path.start_with?(global_repository_path + File::SEPARATOR)
 
-      obj = repository.get_object({path: fixture.expand_path('file_roaming')})
+      obj = repository.object({path: fixture.expand_path('file_roaming')})
       assert_true obj.lock_path.start_with?(global_repository_path + File::SEPARATOR)
     end
 
