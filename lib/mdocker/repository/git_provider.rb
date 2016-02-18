@@ -25,11 +25,7 @@ module MDocker
       ref = location[:ref]
       path = location[:path]
 
-      tmp_location_created = false
-      unless File.directory? @tmp_location
-        FileUtils::mkdir_p @tmp_location
-        tmp_location_created = true
-      end
+      FileUtils::mkdir_p @tmp_location
 
       begin
         tmpdir = Dir.mktmpdir(%w(mdocker. .git), @tmp_location)
@@ -40,10 +36,6 @@ module MDocker
         end
         raise "no blob found for #{location}" unless obj.blob?
         obj.blob? ? obj.contents : nil
-      rescue
-        if tmp_location_created
-          FileUtils::rm_r @tmp_location
-        end
       ensure
         if File.exist? tmpdir
           FileUtils::rm_r tmpdir

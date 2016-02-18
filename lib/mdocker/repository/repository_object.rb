@@ -31,14 +31,16 @@ module MDocker
     def fetch
       local = fetch_local
       origin = fetch_origin
-      if !origin[:hash].nil? && !local.nil? && origin[:hash] == local[:hash]
-        false
-      else
-        if File.exists? @lock_path
-          FileUtils.remove_entry @lock_path
+      if origin[:hash].nil? || local.nil? || origin[:hash] != local[:hash]
+        Dir::Tmpname::create('lock', File.dirname(@lock_path)) do |tmp_path|
+          File.open(tmp_path, File::WRONLY|File::CREAT|File::EXCL) do |file|
+            file.write origin[:contents]
+          end
+          FileUtils::mv(tmp_path, @lock_path)
         end
-        FileUtils::mkdir_p @lock_path
-        File.write(File.join(@lock_path, origin[:hash]), origin[:contents]) == origin[:contents].size
+        true
+      else
+        false
       end
     end
 
@@ -61,16 +63,10 @@ module MDocker
     end
 
     def fetch_local
-      if File.directory? @lock_path
-        Dir.entries(@lock_path).detect { |f|
-          path = File.join(@lock_path, f)
-          if File.file?(path) && File.readable?(path)
-            contents = File.read(path)
-            hash = Digest::SHA1.hexdigest(contents)
-            break {hash: hash, contents: contents} if hash == f
-          end
-        }
-      else
+      begin
+        contents = File.read(@lock_path)
+        {hash: Digest::SHA1.hexdigest(contents), contents: contents}
+      rescue
         nil
       end
     end
