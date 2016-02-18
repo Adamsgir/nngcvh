@@ -44,34 +44,43 @@ module MDocker
     end
 
     def test_git_object_load
-      fixture = @default_fixture.copy
-      repository = create_default_repository(fixture)
-      obj = repository.get_object('file://' + fixture.expand_path('repository.git') + '|master|file')
+      @default_fixture.copy do |fixture|
+        repository = create_default_repository(fixture)
+        objs = [
+          repository.get_object('file://' + fixture.expand_path('repository.git') + '|master|file'),
+          repository.get_object('file://' + fixture.expand_path('repository.git') + '|master'),
+          repository.get_object('file://' + fixture.expand_path('repository.git') + '|master|directory'),
+          repository.get_object('file://' + fixture.expand_path('repository.git') + '|master|directory/Dockerfile')
+        ]
 
-      assert_not_nil obj
-      assert_false obj.has_contents?
-      assert_true obj.outdated?
+        objs.each do |obj|
+          assert_not_nil obj
+          assert_false obj.has_contents?
+          assert_true obj.outdated?
 
-      updated = obj.fetch
+          updated = obj.fetch
 
-      assert_true updated
-      assert_true obj.has_contents?
-      assert_equal 'file', obj.contents
+          assert_true updated
+          assert_true obj.has_contents?
+          assert_equal 'file', obj.contents
+        end
+      end
     end
 
     def test_git_object_load_fail
-      fixture = @default_fixture.copy
-      repository = create_default_repository(fixture)
-      obj1 = repository.get_object('file://' + fixture.expand_path('missing.git') + '|master|file')
-      obj2 = repository.get_object('file://' + fixture.expand_path('repository.git') + '|master|missing')
-      obj3 = repository.get_object('file://' + fixture.expand_path('repository.git') + '|missing|file')
+      @default_fixture.copy do |fixture|
+        repository = create_default_repository(fixture)
+        obj1 = repository.get_object('file://' + fixture.expand_path('missing.git') + '|master|file')
+        obj2 = repository.get_object('file://' + fixture.expand_path('repository.git') + '|master|missing')
+        obj3 = repository.get_object('file://' + fixture.expand_path('repository.git') + '|missing|file')
 
-      [obj1, obj2, obj3].each do |obj|
-        assert_not_nil obj
-        assert_false obj.has_contents?
-        assert_true obj.outdated?
+        [obj1, obj2, obj3].each do |obj|
+          assert_not_nil obj
+          assert_false obj.has_contents?
+          assert_true obj.outdated?
 
-        assert_raise { obj.fetch }
+          assert_raise { obj.fetch }
+        end
       end
 
     end

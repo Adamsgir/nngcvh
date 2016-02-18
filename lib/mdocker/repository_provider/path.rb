@@ -18,7 +18,8 @@ module MDocker
       if File.directory?(path)
         path = File.join(path, @file_name)
       end
-      File.file?(path) && File.readable?(path) ? path : nil
+      path
+      # File.file?(path) && File.readable?(path) ? path : nil
     end
   end
 end

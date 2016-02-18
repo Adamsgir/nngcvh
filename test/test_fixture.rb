@@ -65,8 +65,8 @@ module MDocker
     end
 
     def delete
-      if @cloned
-        FileUtils::remove_entry @root_path
+      if @cloned && File.exist?(@root_path)
+        FileUtils::rm_r @root_path
       end
     end
 

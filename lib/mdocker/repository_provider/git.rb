@@ -3,8 +3,9 @@ require 'git'
 module MDocker
   class GitRepositoryProvider < RepositoryProvider
 
-    def initialize(file_name)
+    def initialize(file_name, tmp_location=nil)
       @file_name = file_name
+      @tmp_location = tmp_location.nil? ? nil : File.expand_path(tmp_location)
     end
 
     def applicable?(location)
@@ -17,18 +18,23 @@ module MDocker
       url = parts[0]
 
       ref = parts[1]
-      ref = 'HEAD' if ref == ''
+      ref = 'HEAD' if ref == '' || ref.nil?
 
       path = parts[2]
+      path = '' if parts[2].nil?
 
-      tmpdir = Dir.mktmpdir(%w(mdocker. .git))
+      unless File.directory? @tmp_location
+        FileUtils::mkdir_p @tmp_location
+      end
+
+      tmpdir = Dir.mktmpdir(%w(mdocker. .git), @tmp_location)
       begin
-        g = Git::clone(url, tmpdir, {depth: 1, bare: true})
-        obj = g.object(ref + ':' + path)
-        if obj.nil?
-          obj = g.object(ref + ':' + path + '/' + @file_name)
+        git = Git::clone(url, tmpdir, {depth: 1, bare: true})
+        obj = git.object(ref + ':' + path)
+        if obj.nil? || obj.tree?
+          obj = git.object(ref + ':' + (path == '' ? '' : path + '/') + @file_name)
         end
-        obj.nil? ? nil : obj.contents
+        obj.blob? ? obj.contents : nil
       ensure
         if File.exist? tmpdir
           FileUtils::rm_r tmpdir

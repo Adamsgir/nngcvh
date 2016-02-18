@@ -36,7 +36,10 @@ module MDocker
           directory_roaming/yyy
           .mdocker/dockerfiles/Dockerfile
         ).each { |path|
-        assert_nil repository.get_object(fixture.expand_path path)
+        obj = repository.get_object(fixture.expand_path path)
+        assert_true obj.outdated?
+        assert_false obj.has_contents?
+        assert_raise { obj.fetch }
       }
     end
 
