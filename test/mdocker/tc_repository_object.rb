@@ -47,13 +47,14 @@ module MDocker
       @default_fixture.copy do |fixture|
         repository = create_default_repository(fixture)
         objs = [
-          repository.get_object('file://' + fixture.expand_path('repository.git') + '|master|file'),
-          repository.get_object('file://' + fixture.expand_path('repository.git') + '|master'),
-          repository.get_object('file://' + fixture.expand_path('repository.git') + '|master|directory'),
-          repository.get_object('file://' + fixture.expand_path('repository.git') + '|master|directory/Dockerfile')
+          'file://' + fixture.expand_path('repository.git') + '|master|file',
+          'file://' + fixture.expand_path('repository.git') + '|master',
+          'file://' + fixture.expand_path('repository.git') + '|master|directory',
+          'file://' + fixture.expand_path('repository.git') + '|master|directory/Dockerfile'
         ]
 
-        objs.each do |obj|
+        objs.each do |location|
+          obj = repository.get_object(location)
           assert_not_nil obj
           assert_false obj.has_contents?
           assert_true obj.outdated?
