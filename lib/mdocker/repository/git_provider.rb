@@ -9,7 +9,7 @@ module MDocker
     end
 
     def applicable?(location)
-      super(location) && location.is_a?(Hash) && location[:url]
+      super(location) && location[:url]
     end
 
     def resolve(location)
@@ -35,7 +35,7 @@ module MDocker
           obj = git.object(ref + ':' + path + '/' + @file_name)
         end
         raise "no blob found for #{location}" unless obj.blob?
-        obj.blob? ? obj.contents : nil
+        obj.contents
       ensure
         if File.exist? tmpdir
           FileUtils::rm_r tmpdir
