@@ -62,14 +62,13 @@ module MDocker
 
     def fetch_local
       if File.directory? @lock_path
-        Dir.entries(@lock_path).select { |f|
+        Dir.entries(@lock_path).detect { |f|
           path = File.join(@lock_path, f)
           if File.file?(path) && File.readable?(path)
             contents = File.read(path)
             hash = Digest::SHA1.hexdigest(contents)
             break {hash: hash, contents: contents} if hash == f
           end
-          false
         }
       else
         nil

@@ -15,7 +15,7 @@ module MDocker
     def resolve(location)
       {
         url: location[:url],
-        ref: location[:ref].to_s.strip.empty? ? 'HEAD' : location[:ref],
+        ref: location[:ref].to_s.strip.empty? ? 'refs/heads/master' : location[:ref],
         path: location[:path].to_s.strip.empty? ? @file_name : location[:path]
       }
     end
@@ -38,6 +38,7 @@ module MDocker
         if obj.nil? || obj.tree?
           obj = git.object(ref + ':' + path + '/' + @file_name)
         end
+        raise "no blob found for #{location}" unless obj.blob?
         obj.blob? ? obj.contents : nil
       rescue
         if tmp_location_created

@@ -15,12 +15,14 @@ module MDocker
     end
 
     def fetch_origin_contents(location)
-      location[:paths].detect do |path|
+      contents = location[:paths].detect do |path|
         if File.directory? path
           path = File.join path, @file_name
         end
         break File.read(path) if File.file?(path) && File.readable?(path)
       end
+      raise "no file found for #{location}" if contents.nil?
+      contents
     end
 
   end

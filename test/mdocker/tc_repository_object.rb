@@ -54,7 +54,7 @@ module MDocker
         objs = [
           {url: fixture.git_url('repository.git'), ref: 'master', path:'file'},
           {url: fixture.git_url('repository.git'), ref: 'master', path:'directory'},
-          {url: fixture.git_url('repository.git'), ref: 'master', path:'directory/Dockerfile'},
+          {url: fixture.git_url('repository.git'), path:'directory/Dockerfile'},
         ]
 
         objs.each do |location|
