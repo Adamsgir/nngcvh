@@ -10,3 +10,24 @@ section:
     - c: x
       d: y
   array.99: value
+  interpolated_missing: "%{missing}"
+  interpolated_value: "%{value}"
+  interpolated_values: "%{value} %{value} %{value}"
+  ref: value
+  interpolated_nested_values: "%{value} %{%{section.ref}} %{value}"
+  interpolated_hash:
+    value: "%{value}"
+  interpolated_array:
+    - "%{value}"
+    - "%{value}"
+    - "%{value}"
+  interpolated_array_value: "%{section.interpolated_array}"
+  interpolated_hash_value: "%{section.interpolated_hash}"
+  interpolated_array_inline: "[%{section.interpolated_array}]"
+  interpolated_hash_inline: "{%{section.interpolated_hash}}"
+loop:
+  back.ref: "%{loop.longer.self.ref}"
+  self.ref: "%{loop.self.ref}"
+  self.ref.inline: "some text and then %{loop.self.ref.inline}"
+  self.ref.inline_ref: "some text and then %{loop.self.ref}"
+  longer.self.ref: "%{loop.back.ref}"

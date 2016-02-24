@@ -90,5 +90,43 @@ module MDocker
       end
     end
 
+    def test_interpolated_string
+      with_fixture('config') do |fixture|
+        config = MDocker::Config.new(DEFAULT_CONFIG_PATHS.map { |path| fixture.expand_path(path) })
+
+        assert_equal '%{missing}', config.get('section.interpolated_missing')
+        assert_equal 'user', config.get('section.interpolated_value')
+        assert_equal 'user user user', config.get('section.interpolated_values')
+        assert_equal 'user user user', config.get('section.interpolated_nested_values')
+      end
+
+    end
+
+    # noinspection RubyStringKeysInHashInspection
+    def test_interpolated_objects
+      with_fixture('config') do |fixture|
+        config = MDocker::Config.new(DEFAULT_CONFIG_PATHS.map { |path| fixture.expand_path(path) })
+
+        assert_equal ({'value' => 'user'}), config.get('section.interpolated_hash')
+        assert_equal ({'value' => 'user'}), config.get('section.interpolated_hash_value')
+
+        assert_equal %w(user user user), config.get('section.interpolated_array')
+        assert_equal %w(user user user), config.get('section.interpolated_array_value')
+
+        assert_equal "[#{%w(user user user).to_s}]", config.get('section.interpolated_array_inline')
+        assert_equal "{#{{'value' => 'user'}.to_s}}", config.get('section.interpolated_hash_inline')
+      end
+    end
+
+    def test_interpolation_loop
+      with_fixture('config') do |fixture|
+        config = MDocker::Config.new(DEFAULT_CONFIG_PATHS.map { |path| fixture.expand_path(path) })
+
+        assert_raise(StandardError) { config.get('loop.self.ref') }
+        assert_raise(StandardError) { config.get('loop.longer.self.ref') }
+        assert_raise(StandardError) { config.get('loop.self.ref.inline') }
+        assert_raise(StandardError) { config.get('loop.self.ref.inline_ref') }
+      end
+    end
   end
 end

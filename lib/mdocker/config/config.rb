@@ -8,9 +8,13 @@ module MDocker
       @config = nil
     end
 
-    def get(key, default_value=nil)
+    def get(key, default_value=nil, stack=[])
+      return nil if key.nil?
+      raise StandardError.new "self referencing loop detected for '#{key}'" if stack.include? key
+      stack = stack + [key]
+
       @config = load_config @config_paths if @config.nil?
-      find_value(key.split('.'), @config) || default_value
+      interpolate(find_value(key.split('.'), @config), stack) || default_value
     end
 
     def to_s
@@ -29,12 +33,36 @@ module MDocker
       end
     end
 
+    def interpolate(value, stack)
+      if Array === value
+        value.map { |item| interpolate(item, stack) }
+      elsif Hash === value
+        value.map { |k,v| [k, interpolate(v, stack)] }.to_h
+      elsif String === value
+        if /^%{([^%{}]+)}$/.match value
+          key = value[/%{([^%{}]+)}/, 1]
+          expansion = get(key, nil, stack)
+          expansion.nil? ? value : expansion
+        else
+          while true
+            key = value[/%{([^%{}]+)}/, 1]
+            expansion = get(key, nil, stack)
+            new_value = expansion.nil? ? value : value.sub("%{#{key}}", expansion.to_s)
+            break value if value == new_value
+            value = new_value
+          end
+        end
+      else
+        value
+      end
+    end
+
     def find_value(key_segments, hash)
       if key_segments.empty?
         hash
       elsif hash.nil?
         nil
-      elsif hash.is_a? Array
+      elsif Array === hash
         begin
           find_value(key_segments.drop(1), hash[Integer(key_segments[0])])
         rescue
