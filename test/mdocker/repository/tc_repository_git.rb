@@ -22,26 +22,26 @@ module MDocker
 
     def setup
       @locations = [
-          {url: 'repository.git', ref: 'master', path:'file'},
-          {url: 'repository.git', ref: 'master', path:'directory'},
-          {url: 'repository.git', path:'directory/Dockerfile'},
-          {url: 'repository.git', ref: 'branch' },
-          {url: 'repository.git'},
-          {url: 'repository.git', ref: 'branch', path:'directory/Dockerfile'},
+          {git: 'repository.git', ref: 'master', path:'file'},
+          {git: 'repository.git', ref: 'master', path:'directory'},
+          {git: 'repository.git', path:'directory/Dockerfile'},
+          {git: 'repository.git', ref: 'branch' },
+          {git: 'repository.git'},
+          {git: 'repository.git', ref: 'branch', path:'directory/Dockerfile'},
       ]
 
       @tag_locations = [
-          {url: 'repository.git', ref: 'branch_tag', path:'directory/Dockerfile'},
-          {url: 'repository.git', ref: 'branch_a_tag', path:'directory/Dockerfile'},
+          {git: 'repository.git', ref: 'branch_tag', path:'directory/Dockerfile'},
+          {git: 'repository.git', ref: 'branch_a_tag', path:'directory/Dockerfile'},
       ]
 
       @missing_locations = [
-          {url: 'missing.git', ref: 'master', path:'file'},
-          {url: 'repository.git', ref: 'master', path:'missing'},
-          {url: 'repository.git', ref: 'missing', path:'file'},
+          {git: 'missing.git', ref: 'master', path:'file'},
+          {git: 'repository.git', ref: 'master', path:'missing'},
+          {git: 'repository.git', ref: 'missing', path:'file'},
       ]
 
-      @single_location = {url: 'repository.git', path:'directory/Dockerfile'}
+      @single_location = {git: 'repository.git', path:'directory/Dockerfile'}
     end
 
     def test_tag_object_load
@@ -82,7 +82,7 @@ module MDocker
     # noinspection RubyUnusedLocalVariable
     def expand_origin(fixture, location)
       clone = location.clone
-      clone[:url] = fixture.git_url(location[:url])
+      clone[:git] = fixture.git_url(location[:git])
       clone
     end
 
@@ -115,7 +115,7 @@ module MDocker
     end
 
     def open_or_clone_git_repo(fixture, location)
-      url = expand_origin(fixture, location)[:url]
+      url = expand_origin(fixture, location)[:git]
       tmp_name = Digest::SHA1::hexdigest(url)
       tmp_path = File.join(RepositoryGitTest::tmp_directory, tmp_name)
       if File.exist?(tmp_path)

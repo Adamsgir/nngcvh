@@ -12,19 +12,19 @@ module MDocker
     end
 
     def applicable?(location)
-      super(location) && location[:url]
+      super(location) && location[:git]
     end
 
     def resolve(location)
       {
-        url: location[:url],
+        git: location[:git],
         ref: location[:ref].to_s.strip.empty? ? 'master' : location[:ref],
         path: location[:path].to_s.strip.empty? ? @file_name : location[:path]
       }
     end
 
     def fetch_origin_contents(location)
-      url = location[:url]
+      url = location[:git]
       ref = location[:ref]
       path = location[:path]
 
