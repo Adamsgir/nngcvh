@@ -9,3 +9,4 @@ section:
     - b
     - c: x
       d: y
+  array.99: value

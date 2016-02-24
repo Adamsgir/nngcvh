@@ -35,8 +35,11 @@ module MDocker
       elsif hash.nil?
         nil
       elsif hash.is_a? Array
-        index = key_segments[0].to_i
-        index < hash.length ? find_value(key_segments.drop(1), hash[index]) : nil
+        begin
+          find_value(key_segments.drop(1), hash[Integer(key_segments[0])])
+        rescue
+          nil
+        end
       else
         index = 0
         key_segments.detect do |_|

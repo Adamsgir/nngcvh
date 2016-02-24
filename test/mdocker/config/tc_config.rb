@@ -33,6 +33,16 @@ module MDocker
       end
     end
 
+    def test_keys_with_dots
+      with_fixture('config') do |fixture|
+        config = MDocker::Config.new(DEFAULT_CONFIG_PATHS.map { |path| fixture.expand_path(path) })
+
+        assert_equal 'value', config.get('section.subsection.dot')
+        assert_equal 'value', config.get('section.array.99')
+      end
+    end
+
+
     def test_missing_config
       config_paths = DEFAULT_CONFIG_PATHS.clone
       config_paths.push 'file.yml'
@@ -48,16 +58,27 @@ module MDocker
       with_fixture('config') do |fixture|
         config = MDocker::Config.new(DEFAULT_CONFIG_PATHS.map { |path| fixture.expand_path(path) })
 
+        assert_true Array === config.get('section.array')
+        assert_true Hash === config.get('section.array.3')
         assert_equal 'a', config.get('section.array.1')
         assert_equal 'x', config.get('section.array.3.c')
       end
     end
 
-    def test_array_oob_value
+    def test_array_oob
       with_fixture('config') do |fixture|
         config = MDocker::Config.new(DEFAULT_CONFIG_PATHS.map { |path| fixture.expand_path(path) })
 
         assert_nil config.get('section.array.5')
+      end
+    end
+
+    def test_array_wrong_index
+      with_fixture('config') do |fixture|
+        config = MDocker::Config.new(DEFAULT_CONFIG_PATHS.map { |path| fixture.expand_path(path) })
+
+        assert_nil config.get('section.array.xxx')
+        assert_nil config.get('section.array.-100')
       end
     end
 

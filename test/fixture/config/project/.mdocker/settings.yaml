@@ -2,3 +2,6 @@ value: project_global
 section:
   project_global_only: project_global
   value: project_global
+  subsection.dot: value
+  subsection:
+    dot: value_in_subsection
