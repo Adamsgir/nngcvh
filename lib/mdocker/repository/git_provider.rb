@@ -32,7 +32,12 @@ module MDocker
 
       begin
         tmpdir = Dir.mktmpdir(%w(mdocker. .git), @tmp_location)
-        git = Git::clone(url, tmpdir, {bare: true})
+        rc = MDocker::Util::run_command("git clone --branch \"#{ref}\" --bare --depth 1 \"#{url}\" \"#{tmpdir}\"", nil, true)
+        if rc != 0
+          git = Git::clone(url, tmpdir, {bare: true})
+        else
+          git = Git::bare(tmpdir)
+        end
         obj = git.object(ref + ':' + path)
         if obj.nil? || obj.tree?
           obj = git.object(ref + ':' + path + '/' + @file_name)
