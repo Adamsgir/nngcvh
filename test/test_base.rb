@@ -6,7 +6,6 @@ module MDocker
     DEFAULT_REPOSITORY_PATHS = %w(project/.mdocker/dockerfiles .mdocker/dockerfiles)
     DEFAULT_LOCK_PATH = '.mdocker/locks'
     DEFAULT_TMP_LOCATION = 'project/.mdocker/tmp'
-    DEFAULT_OUTDATED_THRESHOLD = 100
 
     def with_repository(fixture_name=DEFAULT_FIXTURE_NAME, file_name=DEFAULT_FILE_NAME, repository_paths=DEFAULT_REPOSITORY_PATHS, locks_path=DEFAULT_LOCK_PATH, git_tmp_path=DEFAULT_TMP_LOCATION)
       with_fixture(fixture_name) do |fixture|
@@ -15,7 +14,8 @@ module MDocker
             AbsolutePathProvider.new(file_name),
             PathProvider.new(file_name, fixture.expand_paths(repository_paths)),
         ]
-        repository = MDocker::Repository.new(fixture.expand_path(locks_path), providers, DEFAULT_OUTDATED_THRESHOLD)
+        expensive_provider = providers.max_by { |provider| provider.update_price }
+        repository = MDocker::Repository.new(fixture.expand_path(locks_path), providers, expensive_provider.update_price)
         yield fixture, repository
       end
     end

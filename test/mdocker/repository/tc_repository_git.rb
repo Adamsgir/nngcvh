@@ -67,13 +67,13 @@ module MDocker
           assert_equal obj.contents, contents
           assert_false obj.outdated?
 
-          assert_true obj.outdated?(50)
+          assert_true obj.outdated?(GitRepositoryProvider::UPDATE_PRICE)
           assert_true obj.fetch
 
           assert_true obj.has_contents?
           assert_equal obj.contents, contents * 2
           assert_false obj.outdated?
-          assert_false obj.outdated?(50)
+          assert_false obj.outdated?(GitRepositoryProvider::UPDATE_PRICE)
         end
       end
     end
