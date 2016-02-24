@@ -1,7 +1,10 @@
 module MDocker
   class PathProvider < RepositoryProvider
 
+    UPDATE_PRICE = 0
+
     def initialize(file_name, repositories)
+      super UPDATE_PRICE
       @file_name = file_name
       @repositories = repositories
     end

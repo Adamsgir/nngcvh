@@ -3,7 +3,10 @@ require 'git'
 module MDocker
   class GitRepositoryProvider < RepositoryProvider
 
+    UPDATE_PRICE = 50
+
     def initialize(file_name, tmp_location=nil)
+      super UPDATE_PRICE
       @file_name = file_name
       @tmp_location = tmp_location.nil? ? nil : File.expand_path(tmp_location)
     end

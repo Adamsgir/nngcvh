@@ -48,6 +48,37 @@ module MDocker
       test_object_load(@tag_locations)
     end
 
+    def test_object_outdated_threshold
+      with_repository do |fixture, repository|
+        repository.threshold = 0
+
+        @locations.each do |location|
+          contents = read_origin(fixture, location)
+          obj = repository.object(expand_origin(fixture, location))
+          assert_not_nil obj
+          assert_true obj.fetch
+          assert_true obj.has_contents?
+          assert_false obj.outdated?
+          assert_equal obj.contents, contents
+
+          write_origin(fixture, location, contents * 2)
+
+          assert_true obj.has_contents?
+          assert_equal obj.contents, contents
+          assert_false obj.outdated?
+
+          assert_true obj.outdated?(50)
+          assert_true obj.fetch
+
+          assert_true obj.has_contents?
+          assert_equal obj.contents, contents * 2
+          assert_false obj.outdated?
+          assert_false obj.outdated?(50)
+        end
+      end
+    end
+
+
     # noinspection RubyUnusedLocalVariable
     def expand_origin(fixture, location)
       clone = location.clone

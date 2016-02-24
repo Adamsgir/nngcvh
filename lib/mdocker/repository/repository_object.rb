@@ -5,22 +5,26 @@ module MDocker
 
     attr_reader :origin, :lock_path
 
-    def initialize(origin, lock_path, provider)
+    def initialize(origin, lock_path, provider, threshold)
       @origin = origin
       @lock_path = lock_path
       @provider = provider
+      @threshold = threshold
     end
 
-    def outdated?
+    def outdated?(threshold=nil)
+      threshold = threshold.nil? ? @threshold : threshold
       local = fetch_local
       if local.nil?
         true
-      else
+      elsif threshold >= @provider.update_price
         begin
           fetch_origin[:hash] != local[:hash]
         rescue
           true
         end
+      else
+        false
       end
     end
 

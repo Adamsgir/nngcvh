@@ -1,10 +1,13 @@
 module MDocker
   class RepositoryProvider
 
-    def initialize
+    attr_reader :update_price
+
+    def initialize(update_cost=0)
       if self.class == RepositoryProvider
         raise 'RepositoryProvider is an abstract class'
       end
+      @update_price = update_cost
     end
 
     def applicable?(location)
