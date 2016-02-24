@@ -36,7 +36,15 @@ module MDocker
 
     # noinspection RubyScope
     def self.deep_merge(first, second)
-      merger = proc { |_, v1, v2| Hash === v1 && Hash === v2 ? v1.merge(v2, &merger) : v2 }
+      merger = proc { |_, v1, v2|
+        if Hash === v1 && Hash === v2
+          v1.merge(v2, &merger)
+        elsif Array === v1 && Array === v2
+          v1 + v2
+        else
+          v2
+        end
+      }
       first.merge(second, &merger)
     end
 

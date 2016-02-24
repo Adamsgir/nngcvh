@@ -1,0 +1,6 @@
+value: global
+section:
+  global_only: global
+  value: global
+  array:
+    - global

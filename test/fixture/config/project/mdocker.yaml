@@ -1,0 +1,11 @@
+value: project
+section:
+  value: project
+  subsection:
+    subvalue: project
+  project_only: project
+  array:
+    - a
+    - b
+    - c: x
+      d: y
