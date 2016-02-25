@@ -39,7 +39,7 @@ module MDocker
 
     def resolve_location(location)
       if String === location
-        location = {built_in: location}
+        location = {gem: location}
       end
       MDocker::Util::symbolize_keys(location)
     end

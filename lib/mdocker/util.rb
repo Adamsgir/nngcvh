@@ -56,6 +56,10 @@ module MDocker
       rand(36**length).to_s(36)
     end
 
+    def self.datadir
+      File.expand_path(File.join(File.dirname(__FILE__), '..', '..', 'data', 'mdocker'))
+    end
+
   end
 
 end

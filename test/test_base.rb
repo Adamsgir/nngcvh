@@ -22,6 +22,8 @@ module MDocker
           GitRepositoryProvider.new(file_name, fixture.expand_path(git_tmp_path)),
           AbsolutePathProvider.new(file_name),
           PathProvider.new(file_name, fixture.expand_paths(repository_paths)),
+          GemDataProvider.new(file_name, MDocker::Util::datadir),
+          DockerProvider.new
       ]
       expensive_provider = providers.max_by { |provider| provider.update_price }
       MDocker::Repository.new(fixture.expand_path(locks_path), providers, expensive_provider.update_price)
