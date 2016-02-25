@@ -48,6 +48,14 @@ module MDocker
       first.merge(second, &merger)
     end
 
+    def self.symbolize_keys(hash)
+      Hash[hash.map { |k,v| [k.to_sym, v]}]
+    end
+
+    def self.random_string(length=8)
+      rand(36**length).to_s(36)
+    end
+
   end
 
 end

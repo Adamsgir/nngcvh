@@ -12,7 +12,9 @@ module MDocker
     end
 
     def with_fixture(fixture_name=DEFAULT_FIXTURE_NAME)
-      yield fixture(fixture_name)
+      fixture = fixture(fixture_name)
+      yield fixture
+      fixture.delete
     end
 
     def repository(fixture, file_name=DEFAULT_FILE_NAME, repository_paths=DEFAULT_REPOSITORY_PATHS, locks_path=DEFAULT_LOCK_PATH, git_tmp_path=DEFAULT_TMP_LOCATION)

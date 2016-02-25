@@ -1,0 +1,27 @@
+project:
+  name: test
+  hostname: test_hostname
+  user:
+    name: test_user
+    group: test_user
+    gid: 1000
+    uid: 1000
+
+container:
+  ports:
+    - 4000: 4000
+    - 80: 80
+  volumes:
+    - ~/.m2
+    - ~/.gradle
+    - ~/.test: ~/.test
+
+image:
+  - tool_1:
+      path: test_tool_1
+    args:
+      name_1: value_1
+  - tool_2:
+      path: test_tool_2
+    args:
+      name_2: value_2

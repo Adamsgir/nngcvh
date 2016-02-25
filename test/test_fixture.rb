@@ -30,6 +30,12 @@ module MDocker
       paths.map { |path| expand_path path }
     end
 
+    def write(path, contents)
+      path = expand_path path
+      FileUtils::mkdir_p File.dirname(path)
+      File.write(path, contents)
+    end
+
     def copy
       tmpdir = Dir.mktmpdir(%w(mdocker. .fixture))
 
