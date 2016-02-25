@@ -3,7 +3,6 @@ require_relative '../../test_helper'
 module MDocker
   class RepositoryAbsolutePathTest < Test::Unit::TestCase
 
-    include MDocker::TestBase
     include MDocker::RepositoryTestBase
 
     def setup

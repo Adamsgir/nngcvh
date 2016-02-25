@@ -1,5 +1,9 @@
+require_relative '../../test_helper'
+
 module MDocker
   module RepositoryTestBase
+
+    include MDocker::TestBase
 
     def test_object_creation
       with_repository do |fixture, repository|

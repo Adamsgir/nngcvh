@@ -4,7 +4,6 @@ require 'digest'
 module MDocker
   class RepositoryGitTest < Test::Unit::TestCase
 
-    include MDocker::TestBase
     include MDocker::RepositoryTestBase
 
     class << self
