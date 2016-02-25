@@ -98,6 +98,8 @@ module MDocker
         assert_equal 'user', config.get('section.interpolated_value')
         assert_equal 'user user user', config.get('section.interpolated_values')
         assert_equal 'user user user', config.get('section.interpolated_nested_values')
+        assert_equal 'user %{missing} user', config.get('section.interpolated_partial')
+        assert_equal '%{missing} user %{missing} user', config.get('section.interpolated_partial2')
       end
 
     end

@@ -13,7 +13,7 @@ module MDocker
       raise StandardError.new "self referencing loop detected for '#{key}'" if stack.include? key
       stack = stack + [key]
 
-      @config = load_config @config_paths if @config.nil?
+      @config ||= load_config @config_paths
       interpolate(find_value(key.split('.'), @config), stack) || default_value
     end
 
@@ -34,23 +34,20 @@ module MDocker
     end
 
     def interpolate(value, stack)
-      if Array === value
+      case value
+      when Array
         value.map { |item| interpolate(item, stack) }
-      elsif Hash === value
+      when Hash
         value.map { |k,v| [k, interpolate(v, stack)] }.to_h
-      elsif String === value
-        if /^%{([^%{}]+)}$/.match value
-          key = value[/%{([^%{}]+)}/, 1]
-          expansion = get(key, nil, stack)
-          expansion.nil? ? value : expansion
+      when String
+        key = value[/^%{([^%{}]+)}$/, 1]
+        if key
+          get(key, value, stack)
         else
-          while true
-            key = value[/%{([^%{}]+)}/, 1]
-            expansion = get(key, nil, stack)
-            new_value = expansion.nil? ? value : value.sub("%{#{key}}", expansion.to_s)
-            break value if value == new_value
-            value = new_value
+          new_value = value.scan(/%{[^%{}]+}/).uniq.inject(value) do |str, k|
+            str.gsub(k, interpolate(k, stack).to_s)
           end
+          new_value == value ? new_value : interpolate(new_value, stack)
         end
       else
         value
@@ -69,13 +66,11 @@ module MDocker
           nil
         end
       else
-        index = 0
-        key_segments.detect do |_|
-          sub_key = key_segments.drop(key_segments.length - index)
-          hash_key = key_segments.take(key_segments.length - index).join('.')
-          index += 1
-          value = find_value(sub_key, hash[hash_key])
-          break value unless value.nil?
+        keys = key_segments.inject([[]]) { |array, segment| array << (array.last + [segment]) }
+        keys = keys.drop(1).reverse
+        keys.detect do |key|
+          value = find_value(key_segments.drop(key.length), hash[key.join('.')])
+          break value if value
         end
       end
     end
