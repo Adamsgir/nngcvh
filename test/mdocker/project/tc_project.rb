@@ -48,8 +48,12 @@ module MDocker
         assert_not_equal hash, hash3
         assert_not_equal hash2, hash3
 
-        config_hash(project)['project']['name'] = 'updated'
+        config_hash(project)['project']['hostname'] = 'updated'
         assert_equal hash3, project.build_hash
+
+        config_hash(project)['project']['user']['name'] = 'updated'
+        assert_not_nil hash4 = project.build_hash
+        assert_not_equal hash3, hash4
       end
     end
 

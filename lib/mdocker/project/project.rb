@@ -9,8 +9,13 @@ module MDocker
       @lock_path = lock_path
     end
 
+    def name
+      @config.get('project.name', @config.get('project.default.name', 'mdocker'))
+    end
+
     def build_hash(update_threshold=0)
       digest = Digest::SHA1.new
+      digest.update(name)
       images(update_threshold) do |label, object, args|
         digest.update(label)
         digest.update(object.contents)
