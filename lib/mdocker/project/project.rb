@@ -21,27 +21,56 @@ module MDocker
     private
 
     def images(update_threshold=0)
-      @config.get('image').each do |image|
-        label, location = image.first
-        next digest if label.nil? || location.nil?
-
-        location = resolve_location(location)
-        object = @repository.object(location)
-
-        raise IOError.new "cannot locate image for '#{location}'" if object.nil?
+      load_images.map do |image|
+        label = image[:label]
+        location = image[:location]
+        object = image[:object]
+        args = image[:args]
 
         object.fetch if object.outdated?(update_threshold)
 
-        raise IOError.new "cannot fetch image for '#{location}'" if object.contents.nil?
-        yield label, object, image['args']
+        raise IOError.new "failed to fetch image '#{label}' from '#{location}'" if object.contents.nil?
+
+        yield label, object, args
       end
     end
 
-    def resolve_location(location)
-      if String === location
-        location = {gem: location}
+    def load_images
+      images = resolve_images @config.get('image', [])
+      images = images.empty? ? resolve_images(@config.get('project.default.image', [])) : images
+      raise StandardError.new 'no image defined' if images.empty?
+      images
+    end
+
+    def resolve_images(images)
+      raise StandardError.new("value of Array type is expected for 'image' property") unless Array === images
+
+      labels = []
+      images.inject([]) do |resolved, source|
+        image = resolve_image source
+        next resolved if image.nil?
+
+        raise StandardError.new "duplicate image label '#{image[:label]}'" if labels.include?(image[:label])
+        if image[:location][:docker] && !resolved.empty?
+          raise StandardError.new("image '#{image[:label]}' of type 'docker' may only be the first image in the sequence")
+        end
+
+        labels << image[:label]
+        resolved << image
       end
-      MDocker::Util::symbolize_keys(location)
+    end
+
+    def resolve_image(source)
+      label, location = source.first
+      return nil if label.nil? || location.nil?
+
+      location = {gem: location} if String === location
+      location = MDocker::Util::symbolize_keys(location)
+
+      image = {label: label, location: location, args: (source['args'] || {})}
+      image[:object] = @repository.object(image[:location])
+      raise StandardError.new "unrecognized image specification for '#{label}': #{location}" unless image[:object]
+      image
     end
 
   end

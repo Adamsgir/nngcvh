@@ -52,5 +52,53 @@ module MDocker
       end
     end
 
+    # noinspection RubyStringKeysInHashInspection
+    def test_docker
+      assert_images 'docker', [['os', 'debian:jessie', {}], ['tool_2', 'test_tool_2', {'name_2'=>'value_2'}]]
+    end
+
+    def test_docker_not_first
+      assert_raise(StandardError) {
+        assert_images 'docker_not_first', []
+      }
+    end
+
+    def test_duplicate_image_label
+      assert_raise(StandardError) {
+        assert_images 'duplicate_image_label', []
+      }
+    end
+
+    def test_empty
+      assert_images 'empty', [['base', 'debian:jessie', {}]]
+    end
+
+    def test_missing_image
+      assert_raise(IOError) {
+        assert_images 'missing_image', []
+      }
+    end
+
+    # noinspection RubyStringKeysInHashInspection
+    def test_project
+      assert_images 'project', [['tool_1', 'test_tool_1', {'name_1'=>'value_1'}], ['tool_2', 'test_tool_2', {'name_2'=>'value_2'}]]
+    end
+
+    def test_wrong_image
+      assert_raise(StandardError) {
+        assert_images 'wrong_image', []
+      }
+    end
+
+    def test_no_images
+      assert_images 'no_images', [['base', 'debian:jessie', {}]]
+    end
+
+    def assert_images(project_name, expected)
+      with_project(project_name) do |_, project|
+        assert_equal expected, (project.send(:images) { |label, object, args| [label, object.contents, args] })
+      end
+    end
+
   end
 end
