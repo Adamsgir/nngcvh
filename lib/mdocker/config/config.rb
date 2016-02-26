@@ -3,9 +3,10 @@ require 'yaml'
 module MDocker
   class Config
 
-    def initialize(config_paths = [])
+    def initialize(config_paths = [], base={})
       @config_paths = config_paths
       @config = nil
+      @base = base
     end
 
     def get(key, default_value=nil, stack=[])
@@ -17,6 +18,15 @@ module MDocker
       interpolate(find_value(key.split('.'), @config), stack) || default_value
     end
 
+    def merge(first_key, second_key)
+      first_value = get(first_key, {})
+      second_value = get(second_key, {})
+      unless Hash === first_value && Hash === second_value
+        raise StandardError.new "values of '#{first_key}' and '#{second_key}' properties expected to be of type Hash"
+      end
+      MDocker::Util::deep_merge(first_value, second_value)
+    end
+
     def to_s
       YAML::dump @config
     end
@@ -24,7 +34,7 @@ module MDocker
     private
 
     def load_config(config_paths)
-      config_paths.reverse.inject({}) do |config, path|
+      config_paths.reverse.inject(@base) do |config, path|
         begin
           MDocker::Util::deep_merge(config, YAML::load_file(path))
         rescue

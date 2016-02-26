@@ -34,6 +34,18 @@ module MDocker
       end
     end
 
+    def self.user_info
+      user_name = Etc.getlogin
+      user_info = Etc.getpwnam user_name
+      {
+          name: user_name,
+          group: user_name,
+          uid: user_info.uid,
+          gid: user_info.gid,
+          home: Dir.home
+      }
+    end
+
     # noinspection RubyScope
     def self.deep_merge(first, second)
       merger = proc { |_, v1, v2|
@@ -50,6 +62,10 @@ module MDocker
 
     def self.symbolize_keys(hash)
       Hash[hash.map { |k,v| [k.to_sym, v]}]
+    end
+
+    def self.stringify_keys(hash)
+      Hash[hash.map { |k,v| [k.to_s, v]}]
     end
 
     def self.random_string(length=8)

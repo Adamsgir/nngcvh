@@ -41,6 +41,7 @@ module MDocker
       images = resolve_images @config.get('image', [])
       images = empty_images?(images) ? resolve_images(@config.get('project.default.image', [])) + images : images
       raise StandardError.new 'no image defined' if empty_images?(images)
+      (images << create_user_image('user')) unless images.find { |r| r[:label] == 'user' }
       images
     end
 
@@ -78,6 +79,16 @@ module MDocker
 
     def empty_images?(images)
       images.empty? || (images.find { |r| r[:image][:location][:tag].nil? } == nil)
+    end
+
+    # noinspection RubyStringKeysInHashInspection
+    def create_user_image(image_name)
+      user_info = @config.merge('project.default.user', 'project.user')
+      location = {gem: 'user'}
+      {image: resolve_image({
+          image_name => location,
+          'args' => Util::stringify_keys(user_info)
+      }), label: image_name}
     end
 
   end

@@ -13,7 +13,8 @@ module MDocker
       with_fixture(PROJECT_FIXTURE_NAME) do |fixture|
         config_paths = fixture.expand_paths ["project/#{project_name}.yml", '.mdocker/settings.yml']
         lock_path = fixture.expand_path File.join('project', '.mdocker', 'mdocker.lock')
-        config = MDocker::Config.new(config_paths)
+        base_config = {:project.to_s => { :default.to_s => { :user.to_s => Util::stringify_keys(Util::user_info) }}}
+        config = MDocker::Config.new(config_paths, base_config)
 
         repository = repository(fixture,
                                 'Dockerfile',
@@ -70,7 +71,15 @@ module MDocker
     end
 
     def test_empty
-      assert_images 'empty', [['base', 'debian:jessie', {}]]
+      user_name = Util::user_info[:name]
+      assert_images('empty', [['base', 'debian:jessie', {}]], true, user_name)
+    end
+
+    # noinspection RubyStringKeysInHashInspection
+    def test_skip_user
+      assert_images('skip_user',
+                    [['user', 'user', {}], ['os', 'debian:jessie', {}], ['tool_1', 'test_tool_1', {'name_1'=>'value_1'}], ['tool_2', 'test_tool_2', {'name_2'=>'value_2'}]],
+                    false)
     end
 
     def test_missing_image
@@ -98,7 +107,15 @@ module MDocker
       assert_images 'tags',[['tag', 'tag', {}], ['os', 'debian:jessie', {}], ['base_tag', 'base_tag', {}], ['base_tag2', 'base_tag2', {}]]
     end
 
-    def assert_images(project_name, expected)
+    def assert_images(project_name, expected, include_user=true, user_name='test_user')
+      if include_user
+        user_contents = File.read(File.join(Util::datadir, 'user'))
+        user_args = Util::stringify_keys(Util::user_info)
+        user_args['name'] = user_name
+        user_args['group'] = user_name
+        expected << ['user', user_contents, user_args]
+      end
+
       with_project(project_name) do |_, project|
         assert_equal expected, (project.send(:images) { |label, object, args| [label, object.contents, args] })
       end
