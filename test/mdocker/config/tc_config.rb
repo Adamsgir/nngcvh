@@ -59,9 +59,9 @@ module MDocker
         config = MDocker::Config.new(DEFAULT_CONFIG_PATHS.map { |path| fixture.expand_path(path) })
 
         assert_true Array === config.get('section.array')
-        assert_true Hash === config.get('section.array.3')
-        assert_equal 'a', config.get('section.array.1')
-        assert_equal 'x', config.get('section.array.3.c')
+        assert_true Hash === config.get('section.array.2')
+        assert_equal 'a', config.get('section.array.0')
+        assert_equal 'x', config.get('section.array.2.c')
       end
     end
 
@@ -79,14 +79,6 @@ module MDocker
 
         assert_nil config.get('section.array.xxx')
         assert_nil config.get('section.array.-100')
-      end
-    end
-
-    def test_array_merge
-      with_fixture('config') do |fixture|
-        config = MDocker::Config.new(DEFAULT_CONFIG_PATHS.map { |path| fixture.expand_path(path) })
-
-        assert_equal 'global', config.get('section.array.0')
       end
     end
 
