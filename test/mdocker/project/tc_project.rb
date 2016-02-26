@@ -94,6 +94,10 @@ module MDocker
       assert_images 'no_images', [['base', 'debian:jessie', {}]]
     end
 
+    def test_tags
+      assert_images 'tags',[['tag', 'tag', {}], ['os', 'debian:jessie', {}], ['base_tag', 'base_tag', {}], ['base_tag2', 'base_tag2', {}]]
+    end
+
     def assert_images(project_name, expected)
       with_project(project_name) do |_, project|
         assert_equal expected, (project.send(:images) { |label, object, args| [label, object.contents, args] })

@@ -11,9 +11,10 @@ module MDocker
 
     def build_hash(update_threshold=0)
       digest = Digest::SHA1.new
-      images(update_threshold) do |_, object, args|
-        digest.update(object.contents) if object.contents
-        digest.update(args.to_s) if args
+      images(update_threshold) do |label, object, args|
+        digest.update(label)
+        digest.update(object.contents)
+        digest.update(args.to_s)
       end
       digest.hexdigest!
     end
@@ -21,7 +22,8 @@ module MDocker
     private
 
     def images(update_threshold=0)
-      load_images.map do |image|
+      load_images.map do |source|
+        image = source[:image]
         label = image[:label]
         location = image[:location]
         object = image[:object]
@@ -37,33 +39,34 @@ module MDocker
 
     def load_images
       images = resolve_images @config.get('image', [])
-      images = images.empty? ? resolve_images(@config.get('project.default.image', [])) : images
-      raise StandardError.new 'no image defined' if images.empty?
+      images = empty_images?(images) ? resolve_images(@config.get('project.default.image', [])) + images : images
+      raise StandardError.new 'no image defined' if empty_images?(images)
       images
     end
 
     def resolve_images(images)
       raise StandardError.new("value of Array type is expected for 'image' property") unless Array === images
-
-      labels = []
       images.inject([]) do |resolved, source|
         image = resolve_image source
         next resolved if image.nil?
 
-        raise StandardError.new "duplicate image label '#{image[:label]}'" if labels.include?(image[:label])
-        if image[:location][:docker] && !resolved.empty?
+        raise StandardError.new "duplicate image label '#{image[:label]}'" if resolved.find { |r| r[:label] == image[:label] }
+        if image[:location][:docker] && !empty_images?(resolved)
           raise StandardError.new("image '#{image[:label]}' of type 'docker' may only be the first image in the sequence")
         end
 
-        labels << image[:label]
-        resolved << image
+        resolved << {image: image, label: image[:label]}
       end
     end
 
     def resolve_image(source)
+      source = { source => nil } if String === source
       label, location = source.first
-      return nil if label.nil? || location.nil?
+      return nil if label.nil?
 
+      raise StandardError.new "value of String or Hash type is expected for #{label} image" unless (location.nil? || Hash === location || String === location)
+
+      location = {tag: label} if location.nil? || (String === location && location.empty?)
       location = {gem: location} if String === location
       location = MDocker::Util::symbolize_keys(location)
 
@@ -71,6 +74,10 @@ module MDocker
       image[:object] = @repository.object(image[:location])
       raise StandardError.new "unrecognized image specification for '#{label}': #{location}" unless image[:object]
       image
+    end
+
+    def empty_images?(images)
+      images.empty? || (images.find { |r| r[:image][:location][:tag].nil? } == nil)
     end
 
   end
