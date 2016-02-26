@@ -10,7 +10,7 @@ module MDocker
     end
 
     def name
-      @config.get('project.name', @config.get('project.default.name', 'mdocker'))
+      @config.get('project.name', @config.get('default.project.name', 'mdocker'))
     end
 
     def build_hash(update_threshold=0)
