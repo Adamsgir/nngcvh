@@ -13,7 +13,7 @@ module MDocker
       with_fixture(PROJECT_FIXTURE_NAME) do |fixture|
         config_paths = fixture.expand_paths ["project/#{project_name}.yml", '.mdocker/settings.yml']
         lock_path = fixture.expand_path File.join('project', '.mdocker', 'mdocker.lock')
-        base_config = {:project.to_s => { :default.to_s => { :user.to_s => Util::stringify_keys(Util::user_info) }}}
+        base_config = {:default.to_s => { :container.to_s => { :user.to_s => Util::stringify_keys(Util::user_info) }}}
         config = MDocker::Config.new(config_paths, base_config)
 
         repository = repository(fixture,
@@ -51,7 +51,7 @@ module MDocker
         config_hash(project)['project']['hostname'] = 'updated'
         assert_equal hash3, project.build_hash
 
-        config_hash(project)['project']['user']['name'] = 'updated'
+        config_hash(project)['container']['user']['name'] = 'updated'
         assert_not_nil hash4 = project.build_hash
         assert_not_equal hash3, hash4
       end

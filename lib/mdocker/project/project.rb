@@ -44,7 +44,7 @@ module MDocker
 
     def load_images
       images = resolve_images @config.get('image', [])
-      images = empty_images?(images) ? resolve_images(@config.get('project.default.image', [])) + images : images
+      images = empty_images?(images) ? resolve_images(@config.get('default.image', [])) + images : images
       raise StandardError.new 'no image defined' if empty_images?(images)
       (images << create_user_image('user')) unless images.find { |r| r[:label] == 'user' }
       images
@@ -88,7 +88,7 @@ module MDocker
 
     # noinspection RubyStringKeysInHashInspection
     def create_user_image(image_name)
-      user_info = @config.merge('project.default.user', 'project.user')
+      user_info = @config.merge('default.container.user', 'container.user')
       location = {gem: 'user'}
       {image: resolve_image({
           image_name => location,

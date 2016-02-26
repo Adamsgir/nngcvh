@@ -1,5 +1,4 @@
-project:
-  default:
-    image:
-      - base:
-          docker: debian:jessie
+default:
+  image:
+    - base:
+        docker: debian:jessie
