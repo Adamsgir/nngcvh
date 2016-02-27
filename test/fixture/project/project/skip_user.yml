@@ -3,6 +3,7 @@ project:
 
   container:
     hostname: test_hostname
+    root: true
     user:
       name: test_user
       group: test_user
@@ -17,7 +18,6 @@ project:
       - ~/.test: ~/.test
 
   images:
-    - user:
     - os:
         docker: debian:jessie
     - tool_1:

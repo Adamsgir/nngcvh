@@ -5,8 +5,9 @@ module MDocker
 
     attr_reader :raw
 
-    def initialize(sources = [])
+    def initialize(sources = [], merge_arrays=true)
       sources = [sources] unless Array === sources
+      @merge_arrays = merge_arrays
       @raw = load_config sources
     end
 
@@ -21,17 +22,12 @@ module MDocker
       Config.new([@raw, config])
     end
 
-    def ==(config)
-      @raw == config.raw
+    def *(config)
+      Config.new([@raw, config], false)
     end
 
-    def merge(first_key, second_key)
-      first_value = get(first_key, {})
-      second_value = get(second_key, {})
-      unless Hash === first_value && Hash === second_value
-        raise StandardError.new "values of '#{first_key}' and '#{second_key}' properties expected to be of type Hash"
-      end
-      MDocker::Util::deep_merge(first_value, second_value)
+    def ==(config)
+      @raw == config.raw
     end
 
     def to_s
@@ -46,7 +42,7 @@ module MDocker
           hash = Config === source ? source.raw.clone : source
           hash = Hash === hash ? hash : (YAML::load_file(hash) || {})
           hash = MDocker::Util::symbolize_keys(hash, true)
-          MDocker::Util::deep_merge(config, hash, true)
+          MDocker::Util::deep_merge(config, hash, @merge_arrays)
         rescue IOError, SystemCallError
           config
         end

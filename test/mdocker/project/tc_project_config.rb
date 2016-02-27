@@ -29,7 +29,10 @@ module MDocker
 
     def test_skip_user
       assert_images('skip_user',
-                    [['user', 'user', {}], ['os', 'debian:jessie', {}], ['tool_1', 'test_tool_1', {:name_1 =>'value_1'}], ['tool_2', 'test_tool_2', {:name_2 =>'value_2'}]],
+                    [['os', 'debian:jessie', {}],
+                     ['tool_1', 'test_tool_1', {:name_1 =>'value_1'}],
+                     ['tool_2', 'test_tool_2', {:name_2 =>'value_2'}],
+                     ],
                     false)
     end
 
@@ -54,7 +57,7 @@ module MDocker
     end
 
     def test_tags
-      assert_images 'tags',[['tag', 'tag', {}], ['os', 'debian:jessie', {}], ['base_tag', 'base_tag', {}], ['base_tag2', 'base_tag2', {}]]
+      assert_images 'tags',[['os', 'debian:jessie', {}], ['base_tag', 'base_tag', {}], ['base_tag2', 'base_tag2', {}]]
     end
 
     def assert_images(project_name, expected, include_user=true, user_name='test_user')
@@ -63,11 +66,15 @@ module MDocker
         user_args = Util::user_info
         user_args[:name] = user_name
         user_args[:group] = user_name
-        expected << ['user', user_contents, user_args]
+        expected << ['latest', user_contents, user_args]
+      else
+        expected << ['latest', 'latest', {}]
       end
 
       with_project_config(name: project_name) do |_, config|
-        assert_equal expected, (config.images { |label, object, args| [label, object.contents, args] })
+        assert_equal expected, (config.images do |image|
+          [image[:label], image[:contents], image[:args]]
+        end)
       end
     end
 

@@ -10,13 +10,13 @@ module MDocker
       @lock_path = lock_path
     end
 
-    def build_hash(update_threshold=0)
+    def build_hash
       digest = Digest::SHA1.new
       digest.update(@config.name)
-      @config.images(update_threshold) do |label, object, args|
-        digest.update(label)
-        digest.update(object.contents)
-        digest.update(args.to_s)
+      digest = @config.images.inject(digest) do |d, image|
+        d.update(image[:label])
+        d.update(image[:contents])
+        d.update(image[:args].to_s)
       end
       digest.hexdigest!
     end

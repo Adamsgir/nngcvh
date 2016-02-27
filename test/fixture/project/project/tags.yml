@@ -17,7 +17,6 @@ project:
       - ~/.test: ~/.test
 
   images:
-    - tag:
     - os:
         docker: debian:jessie
     - base_tag
