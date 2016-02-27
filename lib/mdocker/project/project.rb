@@ -3,17 +3,17 @@ require 'digest/sha1'
 module MDocker
   class Project
 
-    attr_reader :project_config
+    attr_reader :config
 
-    def initialize(config, repository, lock_path)
-      @project_config = MDocker::ProjectConfig.new(config, repository)
+    def initialize(project_config, lock_path=nil)
+      @config = project_config
       @lock_path = lock_path
     end
 
     def build_hash(update_threshold=0)
       digest = Digest::SHA1.new
-      digest.update(@project_config.name)
-      @project_config.images(update_threshold) do |label, object, args|
+      digest.update(@config.name)
+      @config.images(update_threshold) do |label, object, args|
         digest.update(label)
         digest.update(object.contents)
         digest.update(args.to_s)

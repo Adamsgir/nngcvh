@@ -7,6 +7,8 @@ module MDocker
     DEFAULT_LOCK_PATH = '.mdocker/locks'
     DEFAULT_TMP_LOCATION = 'project/.mdocker/tmp'
     DEFAULT_CONFIG_PATHS = %w(project/.mdocker.yml project/mdocker.yml project/.mdocker/settings.yml .mdocker/settings.yml).reverse
+    PROJECT_FIXTURE_NAME = 'project'
+    PROJECT_LOCK_PATH = 'project/.mdocker/mdocker.lock'
 
     def fixture(fixture_name=DEFAULT_FIXTURE_NAME)
       Fixture.create(fixture_name).copy
@@ -37,12 +39,40 @@ module MDocker
     end
 
     def config(fixture, config_data)
-      MDocker::Config.new(config_data.map { |data| Hash === data ? data : fixture.expand_path(data) })
+      if Array === config_data
+        MDocker::Config.new(config_data.map { |data| String === data ? fixture.expand_path(data) : data })
+      else
+        MDocker::Config.new(config_data)
+      end
     end
 
     def with_config(fixture_name, config_data=DEFAULT_CONFIG_PATHS)
       with_fixture(fixture_name) do |fixture|
         yield config(fixture, config_data)
+      end
+    end
+
+    def with_project_config(fixture_name: PROJECT_FIXTURE_NAME, name: 'project', base: 'settings')
+      with_fixture(fixture_name) do |fixture|
+        default_config_data = {:default.to_s => { :container.to_s => { :user.to_s => Util::stringify_keys(Util::user_info) }}}
+        config_paths = %W(project/#{name}.yml .mdocker/#{base}.yml)
+        # puts "config from paths: #{config(fixture, default_config_data)}"
+        config = config(fixture, default_config_data) + config(fixture, config_paths)
+
+        repository = repository(fixture,
+                                'Dockerfile',
+                                %w(project/.mdocker/dockerfiles .mdocker/dockerfiles),
+                                '.mdocker/locks',
+                                'project/.mdocker/tmp')
+
+        project_config = MDocker::ProjectConfig.new(config, repository)
+        yield fixture, project_config
+      end
+    end
+
+    def with_project(name: 'project', base: 'settings')
+      with_project_config(name: name, base: base) do |fixture, config|
+        yield fixture, MDocker::Project.new(config, fixture.expand_path(PROJECT_LOCK_PATH))
       end
     end
 

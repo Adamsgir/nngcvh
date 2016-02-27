@@ -7,4 +7,5 @@ require_relative 'mdocker/repository/tc_repository_docker'
 
 require_relative 'mdocker/config/tc_config'
 
+require_relative 'mdocker/project/tc_project_config'
 require_relative 'mdocker/project/tc_project'

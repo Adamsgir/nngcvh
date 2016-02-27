@@ -1,6 +1,8 @@
 module MDocker
   class ProjectConfig
 
+    attr_reader :config, :repository
+
     def initialize(config, repository)
       @config = config
       @repository = repository
