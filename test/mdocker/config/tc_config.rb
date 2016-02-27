@@ -5,17 +5,8 @@ module MDocker
 
     include MDocker::TestBase
 
-    DEFAULT_CONFIG_PATHS = %w(
-      project/.mdocker.yaml
-      project/mdocker.yaml
-      project/.mdocker/settings.yaml
-      .mdocker/settings.yaml
-    )
-
     def test_user_value_override
-      with_fixture('config') do |fixture|
-        config = MDocker::Config.new(DEFAULT_CONFIG_PATHS.map { |path| fixture.expand_path(path) })
-
+      with_config('config') do |config|
         assert_equal 'user', config.get('value')
         assert_equal 'user', config.get('section.value')
         assert_equal 'project', config.get('section.subsection.subvalue')
@@ -23,9 +14,7 @@ module MDocker
     end
 
     def test_hash_merge
-      with_fixture('config') do |fixture|
-        config = MDocker::Config.new(DEFAULT_CONFIG_PATHS.map { |path| fixture.expand_path(path) })
-
+      with_config('config') do |config|
         assert_equal 'user', config.get('section.user_only')
         assert_equal 'project', config.get('section.project_only')
         assert_equal 'project_global', config.get('section.project_global_only')
@@ -34,9 +23,7 @@ module MDocker
     end
 
     def test_keys_with_dots
-      with_fixture('config') do |fixture|
-        config = MDocker::Config.new(DEFAULT_CONFIG_PATHS.map { |path| fixture.expand_path(path) })
-
+      with_config('config') do |config|
         assert_equal 'value', config.get('section.subsection.dot')
         assert_equal 'value', config.get('section.array.99')
       end
@@ -47,17 +34,14 @@ module MDocker
       config_paths = DEFAULT_CONFIG_PATHS.clone
       config_paths.push 'file.yml'
 
-      with_fixture('config') do |fixture|
-        config = MDocker::Config.new(config_paths.map { |path| fixture.expand_path(path) })
+      with_config('config', config_paths) do |config|
         assert_equal 'user', config.get('value')
         assert_equal 'user', config.get('section.value')
       end
     end
 
     def test_array_value
-      with_fixture('config') do |fixture|
-        config = MDocker::Config.new(DEFAULT_CONFIG_PATHS.map { |path| fixture.expand_path(path) })
-
+      with_config('config') do |config|
         assert_true Array === config.get('section.array')
         assert_true Hash === config.get('section.array.2')
         assert_equal 'a', config.get('section.array.0')
@@ -66,26 +50,20 @@ module MDocker
     end
 
     def test_array_oob
-      with_fixture('config') do |fixture|
-        config = MDocker::Config.new(DEFAULT_CONFIG_PATHS.map { |path| fixture.expand_path(path) })
-
+      with_config('config') do |config|
         assert_nil config.get('section.array.5')
       end
     end
 
     def test_array_wrong_index
-      with_fixture('config') do |fixture|
-        config = MDocker::Config.new(DEFAULT_CONFIG_PATHS.map { |path| fixture.expand_path(path) })
-
+      with_config('config') do |config|
         assert_nil config.get('section.array.xxx')
         assert_nil config.get('section.array.-100')
       end
     end
 
     def test_interpolated_string
-      with_fixture('config') do |fixture|
-        config = MDocker::Config.new(DEFAULT_CONFIG_PATHS.map { |path| fixture.expand_path(path) })
-
+      with_config('config') do |config|
         assert_equal '%{missing}', config.get('section.interpolated_missing')
         assert_equal 'user', config.get('section.interpolated_value')
         assert_equal 'user user user', config.get('section.interpolated_values')
@@ -98,9 +76,7 @@ module MDocker
 
     # noinspection RubyStringKeysInHashInspection
     def test_interpolated_objects
-      with_fixture('config') do |fixture|
-        config = MDocker::Config.new(DEFAULT_CONFIG_PATHS.map { |path| fixture.expand_path(path) })
-
+      with_config('config') do |config|
         assert_equal ({'value' => 'user'}), config.get('section.interpolated_hash')
         assert_equal ({'value' => 'user'}), config.get('section.interpolated_hash_value')
 
@@ -113,9 +89,7 @@ module MDocker
     end
 
     def test_interpolation_loop
-      with_fixture('config') do |fixture|
-        config = MDocker::Config.new(DEFAULT_CONFIG_PATHS.map { |path| fixture.expand_path(path) })
-
+      with_config('config') do |config|
         assert_raise(StandardError) { config.get('loop.self.ref') }
         assert_raise(StandardError) { config.get('loop.longer.self.ref') }
         assert_raise(StandardError) { config.get('loop.self.ref.inline') }

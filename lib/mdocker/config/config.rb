@@ -3,10 +3,9 @@ require 'yaml'
 module MDocker
   class Config
 
-    def initialize(config_paths = [], base={})
-      @config_paths = config_paths
+    def initialize(configs_or_paths = [])
+      @configs_or_paths = configs_or_paths
       @config = nil
-      @base = base
     end
 
     def get(key, default_value=nil, stack=[])
@@ -14,7 +13,7 @@ module MDocker
       raise StandardError.new "self referencing loop detected for '#{key}'" if stack.include? key
       stack = stack + [key]
 
-      @config ||= load_config @config_paths
+      @config ||= load_config @configs_or_paths
       interpolate(find_value(key.split('.'), @config), stack) || default_value
     end
 
@@ -33,10 +32,11 @@ module MDocker
 
     private
 
-    def load_config(config_paths)
-      config_paths.reverse.inject(@base) do |config, path|
+    def load_config(configs_or_paths)
+      configs_or_paths.inject({}) do |config, data|
         begin
-          MDocker::Util::deep_merge(config, YAML::load_file(path))
+          hash = Hash === data ? data : YAML::load_file(data)
+          MDocker::Util::deep_merge(config, hash)
         rescue
           config
         end

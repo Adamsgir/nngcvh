@@ -6,6 +6,7 @@ module MDocker
     DEFAULT_REPOSITORY_PATHS = %w(project/.mdocker/dockerfiles .mdocker/dockerfiles)
     DEFAULT_LOCK_PATH = '.mdocker/locks'
     DEFAULT_TMP_LOCATION = 'project/.mdocker/tmp'
+    DEFAULT_CONFIG_PATHS = %w(project/.mdocker.yml project/mdocker.yml project/.mdocker/settings.yml .mdocker/settings.yml).reverse
 
     def fixture(fixture_name=DEFAULT_FIXTURE_NAME)
       Fixture.create(fixture_name).copy
@@ -34,5 +35,17 @@ module MDocker
         yield fixture, repository(fixture, file_name, repository_paths, locks_path, git_tmp_path)
       end
     end
+
+    def config(fixture, config_data)
+      MDocker::Config.new(config_data.map { |data| Hash === data ? data : fixture.expand_path(data) })
+    end
+
+    def with_config(fixture_name, config_data=DEFAULT_CONFIG_PATHS)
+      with_fixture(fixture_name) do |fixture|
+        yield config(fixture, config_data)
+      end
+    end
+
+
   end
 end

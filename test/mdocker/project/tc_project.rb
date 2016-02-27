@@ -6,15 +6,13 @@ module MDocker
     include MDocker::TestBase
 
     PROJECT_FIXTURE_NAME = 'project'
-    PROJECT_CONFIG_PATHS = %w(project/mdocker.yml .mdocker/settings.yml)
     PROJECT_LOCK_PATH = 'project/.mdocker/mdocker.lock'
 
     def with_project(project_name='project')
       with_fixture(PROJECT_FIXTURE_NAME) do |fixture|
-        config_paths = fixture.expand_paths ["project/#{project_name}.yml", '.mdocker/settings.yml']
-        lock_path = fixture.expand_path File.join('project', '.mdocker', 'mdocker.lock')
-        base_config = {:default.to_s => { :container.to_s => { :user.to_s => Util::stringify_keys(Util::user_info) }}}
-        config = MDocker::Config.new(config_paths, base_config)
+        config_data = [{:default.to_s => { :container.to_s => { :user.to_s => Util::stringify_keys(Util::user_info) }}}]
+        config_data += ["project/#{project_name}.yml", '.mdocker/settings.yml']
+        config = config(fixture, config_data)
 
         repository = repository(fixture,
                                 'Dockerfile',
@@ -22,6 +20,7 @@ module MDocker
                                 '.mdocker/locks',
                                 'project/.mdocker/tmp')
 
+        lock_path = fixture.expand_path File.join('project', '.mdocker', 'mdocker.lock')
         project = MDocker::Project.new(config, repository, lock_path)
         yield fixture, project
       end
