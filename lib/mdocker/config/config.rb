@@ -3,26 +3,26 @@ require 'yaml'
 module MDocker
   class Config
 
-    attr_reader :data
+    attr_reader :raw
 
     def initialize(sources = [])
       sources = [sources] unless Array === sources
-      @data = load_config sources
+      @raw = load_config sources
     end
 
     def get(key, default_value=nil, stack=[])
       return nil if key.nil?
       raise StandardError.new "self referencing loop detected for '#{key}'" if stack.include? key
-      interpolate(find_value(key.split('.'), @data), stack + [key]) || default_value
+      interpolate(find_value(key.split('.'), @raw), stack + [key]) || default_value
     end
 
     def +(config)
       config = Config.new(config) unless Config === config
-      Config.new([@data, config.data])
+      Config.new([@raw, config.raw])
     end
 
     def ==(config)
-      @data == config.data
+      @raw == config.raw
     end
 
     def merge(first_key, second_key)
@@ -35,7 +35,7 @@ module MDocker
     end
 
     def to_s
-      YAML::dump @data
+      YAML::dump @raw
     end
 
     private

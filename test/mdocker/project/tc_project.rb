@@ -28,7 +28,7 @@ module MDocker
 
     def config_hash(project)
       config = project.project_config.instance_variable_get(:@config)
-      config.data
+      config.raw
     end
 
     def test_project_hash_changes
