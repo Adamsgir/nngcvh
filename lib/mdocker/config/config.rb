@@ -17,8 +17,7 @@ module MDocker
     end
 
     def +(config)
-      config = Config.new(config) unless Config === config
-      Config.new([@raw, config.raw])
+      Config.new([@raw, config])
     end
 
     def ==(config)
@@ -43,7 +42,8 @@ module MDocker
     def load_config(configs_or_paths)
       configs_or_paths.inject({}) do |config, data|
         begin
-          hash = Hash === data ? data : YAML::load_file(data)
+          hash = Config === data ? data.raw.clone : data
+          hash = Hash === hash ? hash : YAML::load_file(hash)
           MDocker::Util::deep_merge(config, hash)
         rescue
           config

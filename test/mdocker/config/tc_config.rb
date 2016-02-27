@@ -103,7 +103,11 @@ module MDocker
         composed = DEFAULT_CONFIG_PATHS.inject(Config.new({})) do |sum, path|
           sum + fixture.expand_path(path)
         end
+        composed2 = DEFAULT_CONFIG_PATHS.inject(Config.new({})) do |sum, path|
+          sum + Config.new(fixture.expand_path(path))
+        end
         assert_equal composed, config
+        assert_equal composed2, config
       end
     end
   end
