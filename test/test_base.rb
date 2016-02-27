@@ -63,7 +63,9 @@ module MDocker
                                 '.mdocker/locks',
                                 'project/.mdocker/tmp')
 
-        project_config = MDocker::ProjectConfig.new(config, repository)
+        project_config = MDocker::ProjectConfig.new(config, repository,
+                                                    {project_directory: Dir.pwd,
+                                                     working_directory: Dir.pwd})
         yield fixture, project_config
       end
     end
