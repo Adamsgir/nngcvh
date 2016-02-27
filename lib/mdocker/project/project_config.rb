@@ -11,11 +11,11 @@ module MDocker
     end
 
     def name
-      prepared_config.get('project.name')
+      effective_config.get('project.name')
     end
 
     def images
-      prepared_config.get('project.images').map do |image|
+      effective_config.get('project.images').map do |image|
         block_given? ? (yield image) : image
       end
     end
@@ -26,7 +26,7 @@ module MDocker
 
     private
 
-    def prepared_config
+    def effective_config
       @effective_config ||= resolve_images (flavor_config config)
     end
 
@@ -49,8 +49,7 @@ module MDocker
 
         location = {tag: label.to_s} if location.nil? || (String === location && location.empty?)
         location = {gem: location} if String === location
-        image = validate_image(result, {:label => label.to_s, location: location, args: args})
-        image = load_image(image)
+        image = validate_image(result, {label: label.to_s, location: location, args: args})
 
         result << image
       end
@@ -58,11 +57,11 @@ module MDocker
       raise StandardError.new 'no images defined' if images.empty?
 
       if config.get('project.container.root', false)
-        images << load_image({label: LATEST_LABEL, location: {tag: LATEST_LABEL}, args: {}})
+        images << {label: LATEST_LABEL, location: {tag: LATEST_LABEL}, args: {}}
       else
-        images << load_image({label: LATEST_LABEL, location: {gem: 'user'}, args: config.get('project.container.user', {})})
+        images << {label: LATEST_LABEL, location: {gem: 'user'}, args: config.get('project.container.user', {})}
       end
-      config * {project: {images: images}}
+      config * {project: {images: images.map {|i| load_image(i) }}}
     end
 
     def validate_image(images, image)
