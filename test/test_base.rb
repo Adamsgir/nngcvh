@@ -54,10 +54,11 @@ module MDocker
 
     def with_project_config(fixture_name: PROJECT_FIXTURE_NAME, name: 'project', base: 'settings')
       with_fixture(fixture_name) do |fixture|
-        default_config_data = {:default.to_s => { :container.to_s => { :user.to_s => Util::stringify_keys(Util::user_info) }}}
-        config_paths = %W(project/#{name}.yml .mdocker/#{base}.yml)
-        # puts "config from paths: #{config(fixture, default_config_data)}"
-        config = config(fixture, default_config_data) + config(fixture, config_paths)
+        default_config_data = {default: { container: { user: Util::user_info }}}
+        config_paths = %W(.mdocker/#{base}.yml project/#{name}.yml)
+        config_base = config(fixture, default_config_data)
+        config_project = config(fixture, config_paths)
+        config = config_base + config_project
 
         repository = repository(fixture,
                                 'Dockerfile',

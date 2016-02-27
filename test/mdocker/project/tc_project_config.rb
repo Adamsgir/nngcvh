@@ -5,9 +5,8 @@ module MDocker
 
     include MDocker::TestBase
 
-    # noinspection RubyStringKeysInHashInspection
     def test_docker
-      assert_images 'docker', [['os', 'debian:jessie', {}], ['tool_2', 'test_tool_2', {'name_2'=>'value_2'}]]
+      assert_images 'docker', [['os', 'debian:jessie', {}], ['tool_2', 'test_tool_2', {:name_2 =>'value_2'}]]
     end
 
     def test_docker_not_first
@@ -27,10 +26,9 @@ module MDocker
       assert_images('empty', [['base', 'debian:jessie', {}]], true, user_name)
     end
 
-    # noinspection RubyStringKeysInHashInspection
     def test_skip_user
       assert_images('skip_user',
-                    [['user', 'user', {}], ['os', 'debian:jessie', {}], ['tool_1', 'test_tool_1', {'name_1'=>'value_1'}], ['tool_2', 'test_tool_2', {'name_2'=>'value_2'}]],
+                    [['user', 'user', {}], ['os', 'debian:jessie', {}], ['tool_1', 'test_tool_1', {:name_1 =>'value_1'}], ['tool_2', 'test_tool_2', {:name_2 =>'value_2'}]],
                     false)
     end
 
@@ -40,9 +38,8 @@ module MDocker
       }
     end
 
-    # noinspection RubyStringKeysInHashInspection
     def test_project
-      assert_images 'project', [['tool_1', 'test_tool_1', {'name_1'=>'value_1'}], ['tool_2', 'test_tool_2', {'name_2'=>'value_2'}]]
+      assert_images 'project', [['tool_1', 'test_tool_1', {:name_1 =>'value_1'}], ['tool_2', 'test_tool_2', {:name_2 =>'value_2'}]]
     end
 
     def test_wrong_image
@@ -62,9 +59,9 @@ module MDocker
     def assert_images(project_name, expected, include_user=true, user_name='test_user')
       if include_user
         user_contents = File.read(File.join(Util::datadir, 'user'))
-        user_args = Util::stringify_keys(Util::user_info)
-        user_args['name'] = user_name
-        user_args['group'] = user_name
+        user_args = Util::user_info
+        user_args[:name] = user_name
+        user_args[:group] = user_name
         expected << ['user', user_contents, user_args]
       end
 

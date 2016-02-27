@@ -13,6 +13,7 @@ module MDocker
     def get(key, default_value=nil, stack=[])
       return nil if key.nil?
       raise StandardError.new "self referencing loop detected for '#{key}'" if stack.include? key
+      key = key.to_s if Symbol === key
       interpolate(find_value(key.split('.'), @raw), stack + [key]) || default_value
     end
 
@@ -43,9 +44,10 @@ module MDocker
       configs_or_paths.inject({}) do |config, data|
         begin
           hash = Config === data ? data.raw.clone : data
-          hash = Hash === hash ? hash : YAML::load_file(hash)
+          hash = Hash === hash ? hash : (YAML::load_file(hash) || {})
+          hash = MDocker::Util::symbolize_keys(hash, true)
           MDocker::Util::deep_merge(config, hash)
-        rescue
+        rescue IOError, SystemCallError
           config
         end
       end
@@ -87,7 +89,7 @@ module MDocker
         keys = key_segments.inject([[]]) { |array, segment| array << (array.last + [segment]) }
         keys = keys.drop(1).reverse
         keys.detect do |key|
-          value = find_value(key_segments.drop(key.length), hash[key.join('.')])
+          value = find_value(key_segments.drop(key.length), hash[key.join('.').to_sym])
           break value if value
         end
       end

@@ -60,12 +60,15 @@ module MDocker
       first.merge(second, &merger)
     end
 
-    def self.symbolize_keys(hash)
-      Hash[hash.map { |k,v| [k.to_sym, v]}]
-    end
-
-    def self.stringify_keys(hash)
-      Hash[hash.map { |k,v| [k.to_s, v]}]
+    def self.symbolize_keys(obj, deep=false)
+      case obj
+        when Hash
+          Hash[obj.map { |k,v| [k.respond_to?(:to_sym) ? k.to_sym : k, deep ? symbolize_keys(v, deep) : v ] }]
+        when Array
+          obj.map { |item| deep ? symbolize_keys(item, deep) : item }
+        else
+          obj
+      end
     end
 
     def self.random_string(length=8)

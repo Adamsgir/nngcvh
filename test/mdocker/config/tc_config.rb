@@ -5,6 +5,16 @@ module MDocker
 
     include MDocker::TestBase
 
+    def test_symbolize_keys
+      expected = {
+          array: [{a: 'a'}, {b: 'b'}]
+      }
+      input = {
+          :array.to_s => [{:a.to_s => 'a'}, {:b.to_s => 'b'}]
+      }
+      assert_equal expected, MDocker::Util::symbolize_keys(input, true)
+    end
+
     def test_user_value_override
       with_config('config') do |config|
         assert_equal 'user', config.get('value')
@@ -77,14 +87,14 @@ module MDocker
     # noinspection RubyStringKeysInHashInspection
     def test_interpolated_objects
       with_config('config') do |config|
-        assert_equal ({'value' => 'user'}), config.get('section.interpolated_hash')
-        assert_equal ({'value' => 'user'}), config.get('section.interpolated_hash_value')
+        assert_equal ({value: 'user'}), config.get('section.interpolated_hash')
+        assert_equal ({value: 'user'}), config.get('section.interpolated_hash_value')
 
         assert_equal %w(user user user), config.get('section.interpolated_array')
         assert_equal %w(user user user), config.get('section.interpolated_array_value')
 
         assert_equal "[#{%w(user user user).to_s}]", config.get('section.interpolated_array_inline')
-        assert_equal "{#{{'value' => 'user'}.to_s}}", config.get('section.interpolated_hash_inline')
+        assert_equal "{#{{value: 'user'}.to_s}}", config.get('section.interpolated_hash_inline')
       end
     end
 

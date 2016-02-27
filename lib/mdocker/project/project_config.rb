@@ -78,11 +78,10 @@ module MDocker
 
       raise StandardError.new "value of String or Hash type is expected for #{label} image" unless (location.nil? || Hash === location || String === location)
 
-      location = {tag: label} if location.nil? || (String === location && location.empty?)
+      location = {tag: label.to_s} if location.nil? || (String === location && location.empty?)
       location = {gem: location} if String === location
-      location = MDocker::Util::symbolize_keys(location)
 
-      image = {label: label, location: location, args: (source['args'] || {})}
+      image = {label: label.to_s, location: location, args: (source[:args] || {})}
       image[:object] = @repository.object(image[:location])
       raise StandardError.new "unrecognized image specification for '#{label}': #{location}" unless image[:object]
       image
@@ -97,8 +96,8 @@ module MDocker
       user_info = @config.merge('default.container.user', 'container.user')
       location = {gem: 'user'}
       {image: resolve_image({
-                                image_name => location,
-                                'args' => Util::stringify_keys(user_info)
+                                image_name.to_sym => location,
+                                :args => user_info
                             }), label: image_name}
     end
 
