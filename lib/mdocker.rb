@@ -20,3 +20,4 @@ require 'mdocker/repository/docker_provider'
 require 'mdocker/repository/gem_data_provider'
 
 require 'mdocker/project/project'
+require 'mdocker/project/project_config'

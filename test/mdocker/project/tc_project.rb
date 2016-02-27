@@ -27,7 +27,7 @@ module MDocker
     end
 
     def config_hash(project)
-      config = project.instance_variable_get('@config')
+      config = project.project_config.instance_variable_get(:@config)
       config.data
     end
 
@@ -120,7 +120,7 @@ module MDocker
       end
 
       with_project(project_name) do |_, project|
-        assert_equal expected, (project.send(:images) { |label, object, args| [label, object.contents, args] })
+        assert_equal expected, (project.project_config.send(:images) { |label, object, args| [label, object.contents, args] })
       end
     end
 
