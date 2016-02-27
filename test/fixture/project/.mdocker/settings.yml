@@ -1,5 +1,5 @@
 flavors:
-  default:
+  base_image:
     images:
       - base:
           docker: debian:jessie

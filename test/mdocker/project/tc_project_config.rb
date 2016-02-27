@@ -22,8 +22,9 @@ module MDocker
     end
 
     def test_empty
-      user_name = Util::user_info[:name]
-      assert_images('empty', [['base', 'debian:jessie', {}]], true, user_name)
+      assert_raise(StandardError) {
+        assert_images 'empty', []
+      }
     end
 
     def test_skip_user

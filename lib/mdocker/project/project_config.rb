@@ -8,25 +8,6 @@ module MDocker
       @repository = repository
 
       # puts "default config:\n#{@config}"
-      #
-      # process config:
-      #
-      # - merge in user defaults into default flavor
-      # - merge in project flavors into projects, concatenate images!
-      #
-      #   so images go as that:
-      #   images: [super flavor level] // e.g. debian
-      #   images [flavor level] // e.g. java8, maven
-      #   images: [project level] // e.g atlas-sdk
-      #   what about multiple inheritance?
-      #
-      #   and support special boolean label, that stops inheritance:
-      #   images:
-      #   - inherit: false
-      #     start processing images after the last :inherit label
-      #
-      # - append user image, unless explicitly disabled in container
-      #
     end
 
     def name
@@ -102,12 +83,11 @@ module MDocker
     end
 
     def effective_config(config: config)
-      user_data = {flavors: {default: {name: 'mdocker', container: {user: MDocker::Util::user_info}}}}
-      config = MDocker::Config.new(user_data) + config
+      user_data = {project: {name: 'mdocker', container: {user: MDocker::Util::user_info}}}
       flavor_name = config.get('project.flavor', 'default')
       default_flavor = {project: config.get("flavors.#{flavor_name}", {})}
 
-      MDocker::Config.new(default_flavor) + config
+      MDocker::Config.new(user_data) + MDocker::Config.new(default_flavor) + config
     end
 
   end

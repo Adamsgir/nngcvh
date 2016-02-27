@@ -1,6 +1,6 @@
 project:
   name: test
-
+  flavor: base_image
   container:
     hostname: test_hostname
     user:

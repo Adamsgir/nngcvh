@@ -46,7 +46,7 @@ module MDocker
           hash = Config === source ? source.raw.clone : source
           hash = Hash === hash ? hash : (YAML::load_file(hash) || {})
           hash = MDocker::Util::symbolize_keys(hash, true)
-          MDocker::Util::deep_merge(config, hash, false)
+          MDocker::Util::deep_merge(config, hash, true)
         rescue IOError, SystemCallError
           config
         end

@@ -53,9 +53,9 @@ module MDocker
     def test_array_value
       with_config('config') do |config|
         assert_true Array === config.get('section.array')
-        assert_true Hash === config.get('section.array.2')
-        assert_equal 'a', config.get('section.array.0')
-        assert_equal 'x', config.get('section.array.2.c')
+        assert_true Hash === config.get('section.array.3')
+        assert_equal 'a', config.get('section.array.1')
+        assert_equal 'x', config.get('section.array.3.c')
       end
     end
 
