@@ -96,5 +96,15 @@ module MDocker
         assert_raise(StandardError) { config.get('loop.self.ref.inline_ref') }
       end
     end
+
+    def test_concatenation
+      with_fixture('config') do |fixture|
+        config = config(fixture, DEFAULT_CONFIG_PATHS)
+        composed = DEFAULT_CONFIG_PATHS.inject(Config.new({})) do |sum, path|
+          sum + fixture.expand_path(path)
+        end
+        assert_equal composed, config
+      end
+    end
   end
 end
