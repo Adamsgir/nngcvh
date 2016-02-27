@@ -40,13 +40,13 @@ module MDocker
 
     private
 
-    def load_config(configs_or_paths)
-      configs_or_paths.inject({}) do |config, data|
+    def load_config(sources)
+      sources.inject({}) do |config, source|
         begin
-          hash = Config === data ? data.raw.clone : data
+          hash = Config === source ? source.raw.clone : source
           hash = Hash === hash ? hash : (YAML::load_file(hash) || {})
           hash = MDocker::Util::symbolize_keys(hash, true)
-          MDocker::Util::deep_merge(config, hash)
+          MDocker::Util::deep_merge(config, hash, false)
         rescue IOError, SystemCallError
           config
         end

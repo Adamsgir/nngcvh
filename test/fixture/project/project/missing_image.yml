@@ -1,29 +1,29 @@
 project:
   name: test
 
-container:
-  hostname: test_hostname
-  user:
-    name: test_user
-    group: test_user
-    gid: 1000
-    uid: 1000
-  ports:
-    - 4000: 4000
-    - 80: 80
-  volumes:
-    - ~/.m2
-    - ~/.gradle
-    - ~/.test: ~/.test
+  container:
+    hostname: test_hostname
+    user:
+      name: test_user
+      group: test_user
+      gid: 1000
+      uid: 1000
+    ports:
+      - 4000: 4000
+      - 80: 80
+    volumes:
+      - ~/.m2
+      - ~/.gradle
+      - ~/.test: ~/.test
 
-image:
-  - tool_1:
-      path: test_tool_1
-    args:
-      name_1: value_1
-  - tool_2:
-      path: test_tool_2
-    args:
-      name_2: value_2
-  - tool_3:
-      path: missing_path
+  images:
+    - tool_1:
+        path: test_tool_1
+      args:
+        name_1: value_1
+    - tool_2:
+        path: test_tool_2
+      args:
+        name_2: value_2
+    - tool_3:
+        path: missing_path

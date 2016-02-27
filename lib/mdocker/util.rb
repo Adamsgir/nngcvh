@@ -48,16 +48,15 @@ module MDocker
 
     # noinspection RubyScope
     def self.deep_merge(first, second, merge_arrays=false)
-      merger = proc { |_, v1, v2|
+      first.merge(second) do |_,v1,v2|
         if Hash === v1 && Hash === v2
-          v1.merge(v2, &merger)
-        elsif merge_arrays && Array === v1 && Array == v2
+          deep_merge(v1, v2, merge_arrays)
+        elsif merge_arrays && Array === v1 && Array === v2
           v1 + v2
         else
           v2
         end
-      }
-      first.merge(second, &merger)
+      end
     end
 
     def self.symbolize_keys(obj, deep=false)

@@ -4,14 +4,15 @@ module MDocker
     attr_reader :config, :repository
 
     def initialize(config, repository)
-      @config = config
+      @config = effective_config(config: config)
       @repository = repository
 
+      # puts "default config:\n#{@config}"
       #
       # process config:
       #
       # - merge in user defaults into default flavor
-      # - merge in project flavors, concatenate images!
+      # - merge in project flavors into projects, concatenate images!
       #
       #   so images go as that:
       #   images: [super flavor level] // e.g. debian
@@ -29,7 +30,7 @@ module MDocker
     end
 
     def name
-      @config.get('project.name', @config.get('default.project.name', 'mdocker'))
+      @config.get('project.name')
     end
 
     def images(update_threshold=0)
@@ -49,8 +50,7 @@ module MDocker
     end
 
     def load_images
-      images = resolve_images @config.get('image', [])
-      images = empty_images?(images) ? resolve_images(@config.get('default.image', [])) + images : images
+      images = resolve_images @config.get('project.images', [])
       raise StandardError.new 'no image defined' if empty_images?(images)
       (images << create_user_image('user')) unless images.find { |r| r[:label] == 'user' }
       images
@@ -93,12 +93,21 @@ module MDocker
 
     # noinspection RubyStringKeysInHashInspection
     def create_user_image(image_name)
-      user_info = @config.merge('default.container.user', 'container.user')
+      user_info = @config.get('project.container.user')
       location = {gem: 'user'}
       {image: resolve_image({
                                 image_name.to_sym => location,
                                 :args => user_info
                             }), label: image_name}
+    end
+
+    def effective_config(config: config)
+      user_data = {flavors: {default: {name: 'mdocker', container: {user: MDocker::Util::user_info}}}}
+      config = MDocker::Config.new(user_data) + config
+      flavor_name = config.get('project.flavor', 'default')
+      default_flavor = {project: config.get("flavors.#{flavor_name}", {})}
+
+      MDocker::Config.new(default_flavor) + config
     end
 
   end

@@ -1,4 +1,5 @@
-default:
-  image:
-    - base:
-        docker: debian:jessie
+flavors:
+  default:
+    images:
+      - base:
+          docker: debian:jessie

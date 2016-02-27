@@ -1,24 +1,24 @@
 project:
   name: test
 
-container:
-  hostname: test_hostname
-  user:
-    name: test_user
-    group: test_user
-    gid: 1000
-    uid: 1000
-  ports:
-    - 4000: 4000
-    - 80: 80
-  volumes:
-    - ~/.m2
-    - ~/.gradle
-    - ~/.test: ~/.test
+  container:
+    hostname: test_hostname
+    user:
+      name: test_user
+      group: test_user
+      gid: 1000
+      uid: 1000
+    ports:
+      - 4000: 4000
+      - 80: 80
+    volumes:
+      - ~/.m2
+      - ~/.gradle
+      - ~/.test: ~/.test
 
-image:
-  - tag:
-  - os:
-      docker: debian:jessie
-  - base_tag
-  - base_tag2:
+  images:
+    - tag:
+    - os:
+        docker: debian:jessie
+    - base_tag
+    - base_tag2:
