@@ -42,7 +42,6 @@ module MDocker
           group: user_name,
           uid: user_info.uid,
           gid: user_info.gid,
-          home: Dir.home
       }
     end
 
