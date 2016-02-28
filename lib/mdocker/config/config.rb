@@ -31,7 +31,7 @@ module MDocker
     end
 
     def to_s
-      YAML::dump @raw
+      YAML::dump interpolate(@raw, [])
     end
 
     private
