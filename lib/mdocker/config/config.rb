@@ -11,11 +11,11 @@ module MDocker
       @raw = load_config sources
     end
 
-    def get(key, default_value=nil, stack=[])
-      return nil if key.nil?
+    def get(*path, default:nil, stack:[])
+      return nil if (path.nil? or path.empty?)
+      key = path.map {|s| s.to_s}.join('.')
       raise StandardError.new "self referencing loop detected for '#{key}'" if stack.include? key
-      key = key.to_s if Symbol === key
-      interpolate(find_value(key.split('.'), @raw), stack + [key]) || default_value
+      interpolate(find_value(key.split('.'), @raw), stack + [key]) || default
     end
 
     def +(config)
@@ -58,7 +58,7 @@ module MDocker
       when String
         key = value[/^%{([^%{}]+)}$/, 1]
         if key
-          get(key, value, stack)
+          get(key, default:value, stack:stack)
         else
           new_value = value.scan(/%{[^%{}]+}/).uniq.inject(value) do |str, k|
             str.gsub(k, interpolate(k, stack).to_s)

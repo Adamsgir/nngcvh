@@ -25,7 +25,7 @@ module MDocker
 
     def test_hash_merge
       with_config('config') do |config|
-        assert_equal 'user', config.get('section.user_only')
+        assert_equal 'user', config.get(:section, :user_only)
         assert_equal 'project', config.get('section.project_only')
         assert_equal 'project_global', config.get('section.project_global_only')
         assert_equal 'global', config.get('section.global_only')
@@ -56,12 +56,14 @@ module MDocker
         assert_true Hash === config.get('section.array.3')
         assert_equal 'a', config.get('section.array.1')
         assert_equal 'x', config.get('section.array.3.c')
+        assert_equal 'a', config.get(:section, :array, :'1')
       end
     end
 
     def test_array_oob
       with_config('config') do |config|
         assert_nil config.get('section.array.5')
+        assert_equal 'test', config.get(:section, :array, :'5', default:'test')
       end
     end
 

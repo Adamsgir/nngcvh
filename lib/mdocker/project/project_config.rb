@@ -1,15 +1,9 @@
 module MDocker
   class ProjectConfig
 
-    @@LATEST_LABEL = 'latest'.freeze
-    @@PROJECT_NAME = 'project.name'.freeze
-    @@PROJECT_IMAGES = 'project.images'.freeze
-    @@CONTAINER_USER_ROOT = 'project.container.root'.freeze
-    @@CONTAINER_USER_INFO = 'project.container.user'.freeze
-    @@CONTAINER_VOLUMES = 'project.container.volumes'.freeze
-
     WORKING_DIRECTORY_OPT = :working_directory
     PROJECT_DIRECTORY_OPT = :project_directory
+    LATEST_LABEL = 'latest'
 
     attr_reader :config, :repository
 
@@ -20,11 +14,11 @@ module MDocker
     end
 
     def name
-      effective_config.get(@@PROJECT_NAME)
+      effective_config.get(:project, :name)
     end
 
     def images
-      effective_config.get(@@PROJECT_IMAGES).map do |image|
+      effective_config.get(:project, :images).map do |image|
         block_given? ? (yield image) : image
       end
     end
@@ -40,12 +34,13 @@ module MDocker
     end
 
     def flavor_config(config)
-      user_home = config.get(@@CONTAINER_USER_ROOT, false) ? '/root' : "/home/%{#{@@CONTAINER_USER_INFO}.name}"
+      user_home = container_user_root?(config) ? '/root' : '/home/%{project.container.user.name}'
       flavors = [
           {name: 'mdocker'},
+          {images: []},
           {container: { user: MDocker::Util::user_info } },
           {container: { user: { home: user_home }}},
-          config.get("flavors.#{config.get('project.flavor', 'default')}", {}),
+          config.get(:flavors, config.get(:project, :flavor, default:'default'), default:{}),
           ]
       flavors.inject(MDocker::Config.new) { |cfg, flavor| cfg + {project: flavor} } + config
     end
@@ -65,7 +60,7 @@ module MDocker
     end
 
     def resolve_volumes(config)
-      volumes = config.get(@@CONTAINER_VOLUMES).map do |volume|
+      volumes = config.get(:project, :container, :volumes).map do |volume|
         volume = { volume.to_sym => volume} if String === volume
         user, container = volume.first
         {(File.expand_path user.to_s).to_sym => resolve_path_in_container(config, container)}
@@ -76,12 +71,12 @@ module MDocker
     def resolve_path_in_container(config, path)
       path = File.expand_path path
       user_home = Dir.home
-      container_home = File.join(config.get("#{@@CONTAINER_USER_INFO}.home"), File::SEPARATOR)
+      container_home = File.join(config.get(:project, :container, :user, :home), File::SEPARATOR)
       path.sub(/^#{File.join(user_home, File::SEPARATOR)}/, container_home)
     end
 
     def resolve_images(config)
-      images = config.get(@@PROJECT_IMAGES, [])
+      images = config.get(:project, :images, default:[])
       images = images.inject([]) do |result, desc|
         desc = {desc.to_sym => nil} if String === desc
         next result unless Hash === desc
@@ -98,16 +93,16 @@ module MDocker
 
       raise StandardError.new 'no images defined' if images.empty?
 
-      if config.get(@@CONTAINER_USER_ROOT, false)
-        images << {label: @@LATEST_LABEL, location: {tag: @@LATEST_LABEL}, args: {}}
+      if container_user_root?(config)
+        images << {label: LATEST_LABEL, location: {tag: LATEST_LABEL}, args: {}}
       else
-        images << {label: @@LATEST_LABEL, location: {gem: 'user'}, args: config.get(@@CONTAINER_USER_INFO, {})}
+        images << {label: LATEST_LABEL, location: {gem: 'user'}, args: config.get(:project, :container, :user)}
       end
       config * {project: {images: images.map {|i| load_image(i) }}}
     end
 
     def validate_image(images, image)
-      raise StandardError.new "reserved image label '#{image[:label]}'" if image[:label] == @@LATEST_LABEL
+      raise StandardError.new "reserved image label '#{image[:label]}'" if image[:label] == LATEST_LABEL
       raise StandardError.new "duplicate image label '#{image[:label]}'" if images.find { |r| r[:label] == image[:label] }
 
       if image[:location][:docker] && !images.empty?
@@ -124,6 +119,10 @@ module MDocker
       raise StandardError.new "unrecognized image specification:\n'#{image[:location]}'" if object.nil?
       object.fetch if object.outdated?
       image.merge!({object: object, contents: object.contents})
+    end
+
+    def container_user_root?(config)
+      config.get(:project, :container, :root, default:false)
     end
 
   end

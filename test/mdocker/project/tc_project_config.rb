@@ -51,8 +51,8 @@ module MDocker
       container_dir = dir.sub(/^#{Dir.home + '/'}/, '/home/test_user/')
       with_project_config do |_, config|
         raw = config.send(:effective_config)
-        assert_equal container_dir, raw.get('project.container.working_directory')
-        volumes = raw.get('project.container.volumes')
+        assert_equal container_dir, raw.get(:project, :container, :working_directory)
+        volumes = raw.get(:project, :container, :volumes)
         assert_equal({dir.to_sym => container_dir}, volumes.find do |volume|
           volume.first[0].to_s == dir
         end)
