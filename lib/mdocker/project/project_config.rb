@@ -41,8 +41,9 @@ module MDocker
     def flavor_config(config)
       user_home = container_user_root?(config) ? '/root' : '/home/%{project.container.user.name}'
       flavors = [
-          {name: 'mdocker'},
+          {name: MDocker::Meta::NAME},
           {images: []},
+          {container: { hostname: 'docker' }},
           {container: { user: MDocker::Util::user_info } },
           {container: { user: { group: '%{project.container.user.name}' }}},
           {container: { user: { home: user_home }}},
