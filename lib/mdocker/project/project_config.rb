@@ -47,7 +47,6 @@ module MDocker
           {container: { user: MDocker::Util::user_info } },
           {container: { user: { group: '%{project.container.user.name}' }}},
           {container: { user: { home: user_home }}},
-          {container: { command: %w(/bin/bash -l)}},
           config.get(:flavors, config.get(:project, :flavor, default:'default'), default:{}),
           ]
       flavors.inject(MDocker::Config.new) { |cfg, flavor| cfg + {project: flavor} } + config
@@ -71,7 +70,7 @@ module MDocker
           config *= {project: {container: {command: command}}}
         end
       end
-      config
+      MDocker::Config.new({project: {container: {command: %w(/bin/bash -l)}}}) * config
     end
 
     def resolve_volumes(config)
