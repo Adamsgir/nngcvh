@@ -14,7 +14,8 @@ module MDocker
     end
 
     def resolve(location)
-      { paths: @repositories.map { |path| File.expand_path File.join(path, location[:path]) } }
+      path = location[:path].gsub(':', '.')
+      { paths: @repositories.map { |root| File.expand_path File.join(root, path) } }
     end
 
     def fetch_origin_contents(location)

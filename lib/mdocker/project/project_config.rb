@@ -99,7 +99,7 @@ module MDocker
         args = desc[:args] || {}
 
         location = {tag: label.to_s} if location.nil? || (String === location && location.empty?)
-        location = {gem: location} if String === location
+        location = {path: location} if String === location
         image = validate_image(result, {label: label.to_s, location: location, args: args})
 
         result << image
@@ -110,7 +110,8 @@ module MDocker
       if container_user_root?(config)
         images << {label: LATEST_LABEL, location: {tag: LATEST_LABEL}, args: {}}
       else
-        images << {label: LATEST_LABEL, location: {gem: 'user'}, args: config.get(:project, :container, :user)}
+        docker_file = File.expand_path File.join(MDocker::Util::datadir, 'user')
+        images << {label: LATEST_LABEL, location: {path: docker_file}, args: config.get(:project, :container, :user)}
       end
       config * {project: {images: images.map {|i| load_image(i) }}}
     end

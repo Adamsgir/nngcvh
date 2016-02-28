@@ -28,6 +28,7 @@ module MDocker
           File.join(project_dir, dot_name, 'dockerfiles'),
           File.join(home_dir, dot_name, 'dockerfiles'),
           File.join(home_dir, '.config', name, 'dockerfiles'),
+          MDocker::Util::datadir,
       ]
       repository_lock_dir = File.directory?(File.join(home_dir, '.config')) ?
           File.join(home_dir, '.config', name, 'locks') : File.join(home_dir, dot_name, 'locks')
@@ -37,7 +38,6 @@ module MDocker
           GitRepositoryProvider.new(DOCKER_FILE_NAME, repository_temp_dir),
           AbsolutePathProvider.new(DOCKER_FILE_NAME),
           PathProvider.new(DOCKER_FILE_NAME, repository_dirs),
-          GemDataProvider.new(DOCKER_FILE_NAME, MDocker::Util::datadir),
           DockerProvider.new
       ]
       repository = MDocker::Repository.new(repository_lock_dir, providers, update_remote ? 100 : 0)
