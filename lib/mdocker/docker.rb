@@ -1,5 +1,5 @@
 module MDocker
-  class Docker
+  class Docker2
     def initialize(command, docker_path='docker')
       @docker_path = docker_path
       @command = command

@@ -11,6 +11,9 @@ begin
     when 'config'
       project = MDocker::ProjectFactory.new.create({})
       puts project.config.to_s
+    when 'clean'
+      project = MDocker::ProjectFactory.new.create({})
+      project.clean
     when 'run'
       user_command = ARGV.drop(1)
       project = MDocker::ProjectFactory.new.create({command: user_command})
@@ -19,9 +22,10 @@ begin
       STDERR.puts "mdocker: unknown command '#{mdocker_command}'"
       exit 1
   end
+  exit 0
+rescue SystemExit
+  raise
 rescue Exception => e
   STDERR.puts 'mdocker: ' + e.message
   exit 1
 end
-
-exit 0
