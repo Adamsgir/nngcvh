@@ -75,7 +75,7 @@ module MDocker
 
     def assert_images(project_name, expected, include_user=true, user_name='test_user')
       if include_user
-        user_contents = File.read(File.join(Util::datadir, 'user'))
+        user_contents = File.read(File.join(Util::dockerfiles_dir, 'user'))
         user_args = Util::user_info
         user_args[:name] = user_name
         user_args[:group] = user_name

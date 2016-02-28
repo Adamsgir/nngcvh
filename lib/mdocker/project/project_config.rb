@@ -110,7 +110,7 @@ module MDocker
       if container_user_root?(config)
         images << {label: LATEST_LABEL, location: {tag: LATEST_LABEL}, args: {}}
       else
-        docker_file = File.expand_path File.join(MDocker::Util::datadir, 'user')
+        docker_file = File.expand_path File.join(MDocker::Util::dockerfiles_dir, 'user')
         images << {label: LATEST_LABEL, location: {path: docker_file}, args: config.get(:project, :container, :user)}
       end
       config * {project: {images: images.map {|i| load_image(i) }}}

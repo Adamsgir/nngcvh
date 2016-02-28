@@ -16,7 +16,7 @@ module MDocker
       with_repository do |_, repository|
         @locations.each do |location|
 
-          expected_contents = File.read(File.join(MDocker::Util::datadir, location[:gem]))
+          expected_contents = File.read(File.join(MDocker::Util::dockerfiles_dir, location[:gem]))
 
           obj = repository.object(location)
           assert_not_nil obj

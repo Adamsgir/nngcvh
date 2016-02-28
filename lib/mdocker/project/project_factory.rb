@@ -28,7 +28,7 @@ module MDocker
           File.join(project_dir, dot_name, 'dockerfiles'),
           File.join(home_dir, dot_name, 'dockerfiles'),
           File.join(home_dir, '.config', name, 'dockerfiles'),
-          MDocker::Util::datadir,
+          MDocker::Util::dockerfiles_dir,
       ]
       repository_lock_dir = File.directory?(File.join(home_dir, '.config')) ?
           File.join(home_dir, '.config', name, 'locks') : File.join(home_dir, dot_name, 'locks')
