@@ -1,14 +1,14 @@
 FROM debian:jessie
 
-ARG USER=dev
-ARG GROUP=dev
-ARG GID=1001
-ARG UID=1001
+ARG name=dev
+ARG group=$name
+ARG gid=1001
+ARG uid=1001
 
-ARG HOME_DIR=/home/$USER
+ARG home=/home/$name
 
 RUN \
-    groupadd -g $GID $USER && \
-    useradd -d $HOME_DIR -m -u $UID -g $GID $USER
+    groupadd -g $gid $group && \
+    useradd -d $home -m -u $uid -g $gid $name
 
-USER $USER
+USER $name
