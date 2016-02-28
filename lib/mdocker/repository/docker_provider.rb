@@ -8,11 +8,11 @@ module MDocker
     end
 
     def applicable?(location)
-      super(location) && (location[:docker] || location[:tag])
+      super(location) && (location[:pull] || location[:tag])
     end
 
     def fetch_origin_contents(resolved_location)
-      resolved_location[:docker] || resolved_location[:tag]
+      resolved_location[:pull] || resolved_location[:tag]
     end
 
   end

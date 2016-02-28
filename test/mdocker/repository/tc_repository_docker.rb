@@ -8,7 +8,7 @@ module MDocker
 
     def setup
       @locations = [
-          {docker: 'debian:jessie'},
+          {pull: 'debian:jessie'},
       ]
     end
 
@@ -25,7 +25,7 @@ module MDocker
           assert_true obj.fetch
           assert_true obj.has_contents?
           assert_false obj.outdated?
-          assert_equal location[:docker], obj.contents
+          assert_equal location[:pull], obj.contents
         end
       end
     end

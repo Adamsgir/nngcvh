@@ -120,8 +120,8 @@ module MDocker
       raise StandardError.new "reserved image label '#{image[:label]}'" if image[:label] == LATEST_LABEL
       raise StandardError.new "duplicate image label '#{image[:label]}'" if images.find { |r| r[:label] == image[:label] }
 
-      if image[:location][:docker] && !images.empty?
-        raise StandardError.new("image '#{image[:label]}' of type 'docker' may only be the first image in the sequence")
+      if image[:location][:pull] && !images.empty?
+        raise StandardError.new("image '#{image[:label]}' of type 'pull' may only be the first image in the sequence")
       elsif image[:location][:tag] && images.empty?
         raise StandardError.new("tag '#{image[:label]}' may only follow another image definition")
       else

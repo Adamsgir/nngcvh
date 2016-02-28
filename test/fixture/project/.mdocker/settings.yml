@@ -2,4 +2,4 @@ flavors:
   base_image:
     images:
       - base:
-          docker: debian:jessie
+          pull: debian:jessie

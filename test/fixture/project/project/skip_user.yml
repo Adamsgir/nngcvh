@@ -19,7 +19,7 @@ project:
 
   images:
     - os:
-        docker: debian:jessie
+        pull: debian:jessie
     - tool_1:
         path: test_tool_1
       args:

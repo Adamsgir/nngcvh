@@ -22,4 +22,4 @@ project:
       args:
         name_1: value_1
     - tool_2:
-        docker: debian:jessie
+        pull: debian:jessie

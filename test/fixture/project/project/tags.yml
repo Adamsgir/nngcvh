@@ -18,6 +18,6 @@ project:
 
   images:
     - os:
-        docker: debian:jessie
+        pull: debian:jessie
     - base_tag
     - base_tag2:
