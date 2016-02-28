@@ -21,5 +21,8 @@ module MDocker
       digest.hexdigest!
     end
 
+    def run
+    end
+
   end
 end

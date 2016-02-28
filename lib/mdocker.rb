@@ -8,6 +8,7 @@ require 'mdocker/docker'
 require 'mdocker/docker_image'
 require 'mdocker/util'
 
+require 'mdocker/meta'
 require 'mdocker/config/config'
 
 require 'mdocker/repository/repository'
@@ -21,3 +22,4 @@ require 'mdocker/repository/gem_data_provider'
 
 require 'mdocker/project/project'
 require 'mdocker/project/project_config'
+require 'mdocker/project/project_factory'

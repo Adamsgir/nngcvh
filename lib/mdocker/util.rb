@@ -39,7 +39,6 @@ module MDocker
       user_info = Etc.getpwnam user_name
       {
           name: user_name,
-          group: user_name,
           uid: user_info.uid,
           gid: user_info.gid,
       }

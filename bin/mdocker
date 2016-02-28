@@ -1,21 +1,27 @@
 #!/usr/bin/env ruby
 
+lib = File.expand_path File.join(File.dirname(__FILE__), '../lib')
+$LOAD_PATH.unshift(lib)
+
 require 'mdocker'
 
 mdocker_command = ARGV.size > 0 ? ARGV[0] : 'run'
-case mdocker_command
-  when 'run'
-    user_command = ARGV.drop(1)
-    if user_command.nil? or user_command.size == 0
-      user_command = %w(/bin/bash -l)
-    end
-    begin
-      exit MDocker::Base.new.run(Dir.pwd, 'docker', user_command)
-    rescue Exception => e
-      STDERR.puts 'mdocker: ' + e.message
+begin
+  case mdocker_command
+    when 'config'
+      project = MDocker::ProjectFactory.new.create({})
+      puts project.config.to_s
+    when 'run'
+      user_command = ARGV.drop(1)
+      project = MDocker::ProjectFactory.new.create({command: user_command})
+      exit project.run
+    else
+      STDERR.puts "mdocker: unknown command '#{mdocker_command}'"
       exit 1
-    end
-  else
-    STDERR.puts "mdocker: unknown command '#{mdocker_command}'"
-    exit 1
+  end
+rescue Exception => e
+  STDERR.puts 'mdocker: ' + e.message
+  exit 1
 end
+
+exit 0
