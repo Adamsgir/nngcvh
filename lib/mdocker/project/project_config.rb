@@ -3,6 +3,7 @@ module MDocker
 
     WORKING_DIRECTORY_OPT = :working_directory
     PROJECT_DIRECTORY_OPT = :project_directory
+    COMMAND_OPT = :command
     LATEST_LABEL = 'latest'
 
     attr_reader :config, :repository
@@ -27,10 +28,14 @@ module MDocker
       @effective_config = nil
     end
 
+    def to_s
+      effective_config.to_s
+    end
+
     private
 
     def effective_config
-      @effective_config ||= resolve_volumes (inject_directories (resolve_images (flavor_config config)))
+      @effective_config ||= resolve_volumes (inject_options (resolve_images (flavor_config config)))
     end
 
     def flavor_config(config)
@@ -39,21 +44,30 @@ module MDocker
           {name: 'mdocker'},
           {images: []},
           {container: { user: MDocker::Util::user_info } },
+          {container: { user: { group: '%{project.container.user.name}' }}},
           {container: { user: { home: user_home }}},
+          {container: { command: %w(/bin/bash -l)}},
           config.get(:flavors, config.get(:project, :flavor, default:'default'), default:{}),
           ]
       flavors.inject(MDocker::Config.new) { |cfg, flavor| cfg + {project: flavor} } + config
     end
 
-    def inject_directories(config)
+    def inject_options(config)
       if Hash === @opts
         if String === @opts[WORKING_DIRECTORY_OPT]
           user_work_dir = @opts[WORKING_DIRECTORY_OPT]
           config += {project: {container: {WORKING_DIRECTORY_OPT => resolve_path_in_container(config, user_work_dir) }}}
         end
+
         if String === @opts[PROJECT_DIRECTORY_OPT]
           user_project_dir = @opts[PROJECT_DIRECTORY_OPT]
           config += {project: {container: {volumes: [{user_project_dir.to_sym => resolve_path_in_container(config, user_project_dir) }]}}}
+        end
+
+        command = @opts[COMMAND_OPT]
+        command = [command] if String === command
+        if Array === command
+          config *= {project: {container: {command: command}}}
         end
       end
       config
@@ -118,7 +132,7 @@ module MDocker
       object = @repository.object(image[:location])
       raise StandardError.new "unrecognized image specification:\n'#{image[:location]}'" if object.nil?
       object.fetch if object.outdated?
-      image.merge!({object: object, contents: object.contents})
+      image.merge!({contents: object.contents})
     end
 
     def container_user_root?(config)
