@@ -12,7 +12,7 @@ module MDocker
     end
 
     def get(*path, default:nil, stack:[])
-      return nil if (path.nil? or path.empty?)
+      return interpolate(@raw, []) if (path.nil? or path.empty?)
       key = path.map {|s| s.to_s}.join('.')
       raise StandardError.new "self referencing loop detected for '#{key}'" if stack.include? key
       interpolate(find_value(key.split('.'), @raw), stack + [key]) || default
@@ -31,7 +31,7 @@ module MDocker
     end
 
     def to_s
-      YAML::dump interpolate(@raw, [])
+      YAML::dump get
     end
 
     private
