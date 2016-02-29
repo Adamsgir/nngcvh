@@ -59,14 +59,12 @@ module MDocker
       end
       command_args << image_name
       command_args += @config.get(:project, :container, :command)
-      command = "#{@opts[:docker]} run #{command_args.join(' ')}"
-      system(command)
-      $?.exitstatus
+      docker('run', *command_args, shell:true)
     end
 
     def remove(*image_names)
       command_args = ['-f'] + image_names
-      docker('rmi', command_args, mute: false)
+      docker('rmi', *command_args, mute: false)
     end
 
     def has_image?(image_name)
@@ -75,13 +73,19 @@ module MDocker
 
     private
 
-    def docker(command, *args, input:nil, mute:true)
-      if block_given?
-        MDocker::Util::run_command("#{@opts[:docker]} #{command} #{args.join(' ')}", input, mute) do |ol, el|
+    def docker(command, *args, input:nil, mute:true, shell: false)
+      command_line = [@opts[:docker], command] + args
+      command_line = command_line.shelljoin
+      puts command_line
+      if shell
+        system(command_line)
+        $?.exitstatus
+      elsif block_given?
+        MDocker::Util::run_command(command_line, input, mute) do |ol, el|
           yield ol, el
         end
       else
-        MDocker::Util::run_command("#{@opts[:docker]} #{command} #{args.join(' ')}", input, mute)
+        MDocker::Util::run_command(command_line, input, mute)
       end
     end
   end
