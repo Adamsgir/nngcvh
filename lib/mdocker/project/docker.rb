@@ -12,11 +12,10 @@ module MDocker
     end
 
     def generate_build_name(project_name)
-      name = "#{project_name}-#{MDocker::Util::random_string(8)}"
-      while has_image?(name)
+      while true
         name = "#{project_name}-#{MDocker::Util::random_string(8)}"
+        break name unless has_image?(name)
       end
-      name
     end
 
     def tag(image_name, label)
@@ -24,7 +23,7 @@ module MDocker
     end
 
     def pull(image_name)
-      docker('pull', image_name, mute:false)
+      docker('pull', image_name, mute: false)
     end
 
     def build(image_name, contents, args)
@@ -61,8 +60,8 @@ module MDocker
       command_args << image_name
       command_args += @config.get(:project, :container, :command)
       command = "#{@opts[:docker]} run #{command_args.join(' ')}"
-      puts command
       system(command)
+      $?.exitstatus
     end
 
     def remove(*image_names)
@@ -71,7 +70,7 @@ module MDocker
     end
 
     def has_image?(image_name)
-      docker('inspect', image_name) == 0
+      docker('inspect', image_name) == 0 ? image_name : nil
     end
 
     private
