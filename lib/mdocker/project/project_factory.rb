@@ -32,7 +32,7 @@ module MDocker
           GitRepositoryProvider.new(DOCKER_FILE_NAME, repository_temp_dir),
           AbsolutePathProvider.new(DOCKER_FILE_NAME),
           PathProvider.new(DOCKER_FILE_NAME, repository_dirs),
-          DockerProvider.new
+          DockerProvider.new,
       ]
       repository = MDocker::Repository.new(repository_lock_dir, providers, update_remote ? 100 : 0)
 

@@ -182,7 +182,11 @@ module MDocker
         args = desc[:args] || {}
 
         location = {tag: label.to_s} if location.nil? || (String === location && location.empty?)
-        location = {path: location} if String === location
+        if docker_file?(location)
+          location = {raw: location}
+        elsif String === location
+          location = {path: location}
+        end
         image = validate_image(result, {label: label.to_s, location: location, args: args})
 
         result << image
@@ -221,6 +225,10 @@ module MDocker
 
     def container_user_root?(config)
       config.get(:project, :container, :root, default:false)
+    end
+
+    def docker_file?(contents)
+      String === contents && (contents.include?('\n') || contents.match(/^FROM\s+[a-zA-Z0-9:\.-_@]+$/))
     end
 
   end
