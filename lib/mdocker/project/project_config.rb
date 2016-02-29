@@ -8,8 +8,8 @@ module MDocker
 
     attr_reader :config, :repository
 
-    def initialize(config, repository, opts={})
-      @config = config
+    def initialize(config_sources, repository, opts={})
+      @config = create_config(config_sources)
       @repository = repository
       @opts = opts
     end
@@ -34,6 +34,20 @@ module MDocker
 
     private
 
+    MERGE_CONFIG_ARRAYS = [
+        [:project, :images],
+        [:project, :container, :volumes],
+        [:project, :container, :ports],
+    ]
+
+    def merge_config_arrays(key, a1, a2)
+      MERGE_CONFIG_ARRAYS.include?(key) ? (a1 + a2) : (a2)
+    end
+
+    def create_config(sources=[])
+      MDocker::Config.new(sources, array_merger: method(:merge_config_arrays))
+    end
+
     def effective_config
       @effective_config ||= resolve_volumes (inject_options (resolve_images (flavor_config config)))
     end
@@ -49,7 +63,7 @@ module MDocker
           {container: { user: { home: user_home }}},
           config.get(:flavors, config.get(:project, :flavor, default:'default'), default:{}),
           ]
-      flavors.inject(MDocker::Config.new) { |cfg, flavor| cfg + {project: flavor} } + config
+      flavors.inject(create_config) { |cfg, flavor| cfg + {project: flavor} } + config
     end
 
     def inject_options(config)
@@ -67,10 +81,10 @@ module MDocker
         command = @opts[COMMAND_OPT]
         command = [command] if String === command
         if Array === command
-          config *= {project: {container: {command: command}}}
+          config += {project: {container: {command: command}}}
         end
       end
-      MDocker::Config.new({project: {container: {command: %w(/bin/bash -l)}}}) * config
+      create_config({project: {container: {command: %w(/bin/bash -l)}}}) + config
     end
 
     def resolve_volumes(config)
@@ -79,7 +93,7 @@ module MDocker
         user, container = volume.first
         {(File.expand_path user.to_s).to_sym => resolve_path_in_container(config, container)}
       end
-      config * {project: {container: {volumes: volumes}}}
+      config.set(:project, :container, :volumes, volumes)
     end
 
     def resolve_path_in_container(config, path)
@@ -113,7 +127,7 @@ module MDocker
         docker_file = File.expand_path File.join(MDocker::Util::dockerfiles_dir, 'user')
         images << {label: LATEST_LABEL, location: {path: docker_file}, args: config.get(:project, :container, :user)}
       end
-      config * {project: {images: images.map {|i| load_image(i) }}}
+      config.set(:project, :images, images.map {|i| load_image(i) })
     end
 
     def validate_image(images, image)

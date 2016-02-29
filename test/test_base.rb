@@ -54,8 +54,6 @@ module MDocker
 
     def with_project_config(fixture_name: PROJECT_FIXTURE_NAME, name: 'project', base: 'settings')
       with_fixture(fixture_name) do |fixture|
-        config_paths = %W(.mdocker/#{base}.yml project/#{name}.yml)
-        config = config(fixture, config_paths)
 
         repository = repository(fixture,
                                 'Dockerfile',
@@ -63,7 +61,9 @@ module MDocker
                                 '.mdocker/locks',
                                 'project/.mdocker/tmp')
 
-        project_config = MDocker::ProjectConfig.new(config, repository,
+        config_paths = %W(.mdocker/#{base}.yml project/#{name}.yml)
+        project_config = MDocker::ProjectConfig.new(fixture.expand_paths(config_paths),
+                                                    repository,
                                                     {project_directory: Dir.pwd,
                                                      working_directory: Dir.pwd})
         yield fixture, project_config

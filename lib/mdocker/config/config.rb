@@ -5,9 +5,9 @@ module MDocker
 
     attr_reader :raw
 
-    def initialize(sources = [], merge_arrays=true)
+    def initialize(sources = [], array_merger:nil)
       sources = [sources] unless Array === sources
-      @merge_arrays = merge_arrays
+      @array_merger = array_merger || lambda { |_, a1, a2| a1 + a2}
       @raw = load_config sources
     end
 
@@ -18,12 +18,18 @@ module MDocker
       interpolate(find_value(key.split('.'), @raw), stack + [key]) || default
     end
 
-    def +(config)
-      Config.new([@raw, config])
+    def set(*path, value)
+      return Config.new(value, array_merger: @array_merger) if (path.nil? or path.empty?)
+      clone = @raw.clone
+      hash = path[0...-1].inject(clone) do |hash, key|
+        hash[key] ||= {}
+      end
+      hash[path[-1]] = value
+      Config.new(clone, array_merger: @array_merger)
     end
 
-    def *(config)
-      Config.new([@raw, config], false)
+    def +(config)
+      Config.new([@raw, config], array_merger: @array_merger)
     end
 
     def ==(config)
@@ -42,7 +48,7 @@ module MDocker
           hash = Config === source ? source.raw.clone : source
           hash = Hash === hash ? hash : (YAML::load_file(hash) || {})
           hash = MDocker::Util::symbolize_keys(hash, true)
-          MDocker::Util::deep_merge(config, hash, @merge_arrays)
+          MDocker::Util::deep_merge(config, hash, array_merge: @array_merger)
         rescue IOError, SystemCallError
           config
         end

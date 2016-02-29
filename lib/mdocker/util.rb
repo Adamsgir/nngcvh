@@ -44,12 +44,12 @@ module MDocker
       }
     end
 
-    def self.deep_merge(first, second, merge_arrays=false)
-      first.merge(second) do |_,v1,v2|
+    def self.deep_merge(first, second, key:[], array_merge: lambda {|_, a1, a2| a1 + a2})
+      first.merge(second) do |label,v1,v2|
         if Hash === v1 && Hash === v2
-          deep_merge(v1, v2, merge_arrays)
-        elsif merge_arrays && Array === v1 && Array === v2
-          v1 + v2
+          deep_merge(v1, v2, key: key + [label], array_merge: array_merge)
+        elsif array_merge && Array === v1 && Array === v2
+          array_merge.call(key + [label], v1, v2)
         else
           v2
         end
@@ -72,7 +72,11 @@ module MDocker
     end
 
     def self.dockerfiles_dir
-      File.expand_path(File.join(File.dirname(__FILE__), '..', '..', 'data', 'dockerfiles'))
+      File.expand_path(File.join(data_dir, 'dockerfiles'))
+    end
+
+    def self.data_dir
+      File.expand_path(File.join(File.dirname(__FILE__), '..', '..', 'data'))
     end
 
   end

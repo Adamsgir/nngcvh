@@ -22,7 +22,6 @@ module MDocker
         File.join(project_dir, name + '.yml'),
         File.join(project_dir, dot_name + '.yml')
       ]
-      config = MDocker::Config.new(config_files)
 
       repository_dirs = [
           File.join(project_dir, dot_name, 'dockerfiles'),
@@ -45,7 +44,7 @@ module MDocker
       project_opts = { ProjectConfig::WORKING_DIRECTORY_OPT => current_dir,
                        ProjectConfig::PROJECT_DIRECTORY_OPT => project_dir,
                        ProjectConfig::COMMAND_OPT => command }
-      project_config = MDocker::ProjectConfig.new(config, repository, project_opts)
+      project_config = MDocker::ProjectConfig.new(config_files, repository, project_opts)
 
       project_lock_file = File.join(project_dir, dot_name, name + '.lock')
       MDocker::Project.new(project_config, project_lock_file)
