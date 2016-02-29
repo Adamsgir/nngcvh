@@ -60,6 +60,52 @@ module MDocker
       assert_images 'tags',[['os', 'debian:jessie', {}], ['base_tag', 'base_tag', {}], ['base_tag2', 'base_tag2', {}]]
     end
 
+    def test_volumes
+      host_home = Dir.home
+      container_home = '/home/test_user'
+      with_project_config(name: 'volumes') do |fixture, config|
+        expected = [
+            {host: "#{host_home}/host", container: "#{container_home}/host"},
+            {host: '/host', container: '/host'},
+            {host: "#{host_home}/.host", container: "#{container_home}/.container"},
+            {host: 'named', container: '/container'},
+            {host: '10', container: '/10'},
+            {host: '10.1', container: '/10.1'},
+            {host: '11', container: "#{container_home}/11"},
+            {host: 'true', container: '/true'},
+            {host: 'false', container: '/false'},
+            {host: fixture.expand_path('project'), container: fixture.expand_path('project') }
+        ]
+        assert_equal expected, config.volumes
+      end
+    end
+
+    def test_named_volume_no_path
+      assert_raise(StandardError) {
+        with_project_config(name: 'volumes_named_no_path') do |_, config|
+          config.volumes
+        end
+      }
+      assert_raise(StandardError) {
+        with_project_config(name: 'volumes_named_no_path2') do |_, config|
+          config.volumes
+        end
+      }
+    end
+
+    def test_duplicated_volumes
+      assert_raise(StandardError) {
+        with_project_config(name: 'volumes_duplicate_container') do |_, config|
+          config.volumes
+        end
+      }
+      assert_raise(StandardError) {
+        with_project_config(name: 'volumes_duplicate_host') do |_, config|
+          config.volumes
+        end
+      }
+    end
+
     def assert_images(project_name, expected, include_user=true, user_name='test_user')
       if include_user
         user_contents = File.read(File.join(Util::dockerfiles_dir, 'user'))

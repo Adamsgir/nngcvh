@@ -43,7 +43,7 @@ module MDocker
     end
 
     def effective_config
-      @effective_config ||= resolve_volumes (resolve_images (flavor_config config))
+      @effective_config ||= resolve_paths (resolve_images (flavor_config config))
     end
 
     def reload
@@ -88,23 +88,46 @@ module MDocker
           {container: { user: { home: user_home }}},
           config.get(:flavors, config.get(:project, :flavor, default:'default'), default:{}),
           ]
-
-      config = flavors.inject(create_config) { |cfg, flavor| cfg + {project: flavor} } + config
-
-      host_project_dir = config.get(:project, :host, :project_directory)
-      host_working_dir = config.get(:project, :host, :working_directory)
-
-      config = host_project_dir ? config + {project: { container: { volumes: [ host_project_dir ] }}} : config
-      host_working_dir ? config + {project: { container: { working_directory: resolve_path_in_container(config, host_working_dir) }}} : config
+      flavors.inject(create_config) { |cfg, flavor| cfg + {project: flavor} } + config
     end
 
-    def resolve_volumes(config)
-      volumes = config.get(:project, :container, :volumes).map do |volume|
-        volume = { volume.to_sym => volume} if String === volume
-        user, container = volume.first
-        {(File.expand_path user.to_s).to_sym => resolve_path_in_container(config, container)}
+    def resolve_paths(config)
+      host_working_dir = config.get(:project, :host, :working_directory)
+      if host_working_dir
+        config = config.set(:project, :container, :working_directory, resolve_path_in_container(config, host_working_dir))
+      end
+
+      volumes = config.get(:project, :container, :volumes).inject([]) do |result, volume|
+        if Hash === volume
+          volume.inject(result) { |r, pair| r << {host: pair[0].to_s, container: (pair[1] && !pair[1].to_s.empty?) ? pair[1].to_s : nil} }
+        elsif volume && !volume.to_s.empty?
+          result << {host: volume.to_s}
+        end
+      end
+
+      volumes = volumes.inject([]) do |result, volume|
+        named_container = named_container?(volume[:host])
+        unless volume[:container]
+          raise StandardError.new("shared volume '#{volume[:host]}' have to be mapped a path in the container") if named_container
+          volume[:container] = volume[:host]
+        end
+        volume[:host] = named_container ? volume[:host] : File.expand_path(volume[:host], config.get(:project, :host, :project_directory))
+        volume[:container] = resolve_path_in_container(config, volume[:container])
+        if result.find { |v| v[:host] == volume[:host] || v[:container] == volume[:container] }
+          raise StandardError.new("duplicate volume definition: '#{volume[:host]}:#{volume[:container]}'")
+        end
+        result << volume
+      end
+      host_project_dir = config.get(:project, :host, :project_directory)
+      container_project_dir = resolve_path_in_container(config, host_project_dir)
+      unless volumes.find { |v| v[:host] == host_project_dir || v[:container] == container_project_dir }
+        volumes << {host: host_project_dir, container: container_project_dir }
       end
       config.set(:project, :container, :volumes, volumes)
+    end
+
+    def named_container?(path)
+      path.match(/^[0-9a-zA-Z][0-9a-zA-Z\.-_]*$/)
     end
 
     def resolve_path_in_container(config, path)

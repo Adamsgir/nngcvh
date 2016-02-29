@@ -45,9 +45,8 @@ module MDocker
       command_args << '-w'
       command_args << @config.working_directory
       @config.volumes do |volume|
-        host, container = volume.first
         command_args << '-v'
-        command_args << "#{host.to_s}:#{container}"
+        command_args << "#{volume[:host]}:#{volume[:container]}"
       end
       @config.ports do |port|
         host, container = port.first

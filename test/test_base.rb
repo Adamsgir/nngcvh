@@ -62,8 +62,12 @@ module MDocker
                                 'project/.mdocker/tmp')
 
         config_paths = %W(.mdocker/#{base}.yml project/#{name}.yml)
-        project_config = MDocker::ProjectConfig.new(fixture.expand_paths(config_paths),
-                                                    repository)
+        project_config = MDocker::ProjectConfig.new(
+            [{project: {host: {user: Util::user_info }}}] +
+            [{project: {host: {project_directory: fixture.expand_path('project') }}}] +
+            [{project: {host: {user: {home: Dir.home } }}}] +
+              fixture.expand_paths(config_paths),
+            repository)
         yield fixture, project_config
       end
     end
