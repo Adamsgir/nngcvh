@@ -43,7 +43,7 @@ module MDocker
     end
 
     def effective_config
-      @effective_config ||= resolve_paths (resolve_images (flavor_config config))
+      @effective_config ||= resolve_ports (resolve_paths (resolve_images (flavor_config config)))
     end
 
     def reload
@@ -118,16 +118,50 @@ module MDocker
         end
         result << volume
       end
+
       host_project_dir = config.get(:project, :host, :project_directory)
       container_project_dir = resolve_path_in_container(config, host_project_dir)
       unless volumes.find { |v| v[:host] == host_project_dir || v[:container] == container_project_dir }
         volumes << {host: host_project_dir, container: container_project_dir }
       end
+
       config.set(:project, :container, :volumes, volumes)
+    end
+
+    def resolve_ports(config)
+      ports = config.get(:project, :container, :ports)
+      ports = [ports] unless Array === ports || Hash === ports
+      ports = ports.inject([]) do |result, port|
+        if all_ports? port
+          break [{mapping: :ALL}]
+        elsif Hash === port
+          result + port.map { |pair| {mapping: pair.join(':')} }
+        elsif Array === port
+          result << {mapping: port.join(':')}
+        else
+          result << {mapping: port.to_s}
+        end
+      end
+      ports = [{mapping: :ALL}] if ports.include?({mapping: :ALL})
+      ports = ports.map {|p| {mapping: port_number?(p[:mapping]) ? p[:mapping] + ':' + p[:mapping] : p[:mapping] } }
+      config.set(:project, :container, :ports, ports)
     end
 
     def named_container?(path)
       path.match(/^[0-9a-zA-Z][0-9a-zA-Z\.-_]*$/)
+    end
+
+    def port_number?(port)
+      begin
+        Integer(port)
+      rescue
+        #
+      end
+    end
+
+    def all_ports?(port)
+      port = port.to_s.downcase
+      port == '*' || port == 'all' || port == 'true'
     end
 
     def resolve_path_in_container(config, path)

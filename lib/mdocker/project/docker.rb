@@ -49,9 +49,12 @@ module MDocker
         command_args << "#{volume[:host]}:#{volume[:container]}"
       end
       @config.ports do |port|
-        host, container = port.first
-        command_args << '-p'
-        command_args << "#{host.to_s}:#{container}"
+        if port[:mapping] == :ALL
+          command_args << '-P'
+        else
+          command_args << '-p'
+          command_args << "#{port[:mapping]}"
+        end
       end
       command_args << image_name
       command_args += @config.command
