@@ -6,7 +6,7 @@ module MDocker
 
     attr_reader :config
 
-    def initialize(project_config, lock_path=nil)
+    def initialize(project_config, lock_path="#{MDocker::Meta::NAME}.lock")
       @config = project_config
       @lock_path = lock_path
     end
@@ -71,7 +71,7 @@ module MDocker
       @config.images.inject(nil) do |previous, image|
         name = "#{lock[:build_name]}:#{image[:label]}"
         rc = if image[:location][:pull]
-          rc = docker.pull(image[:contents])
+          rc = docker.has_image?(image[:contents]) ? 0 : docker.pull(image[:contents])
           rc == 0 ? docker.tag(image[:contents], name) : rc
         elsif image[:location][:tag]
           name = "#{lock[:build_name]}:#{image[:contents]}"
@@ -106,13 +106,21 @@ module MDocker
     end
 
     def delete_lock
-      FileUtils::rm @lock_path
+      begin
+        FileUtils::rm_f @lock_path
+      rescue SystemCallError, IOError
+        # ignored
+      end
     end
 
     def write_lock(lock={})
-      # todo: atomic write
       FileUtils::mkdir_p(File.dirname(@lock_path))
-      File.write @lock_path, YAML::dump(lock)
+      Dir::Tmpname::create('lock', File.dirname(@lock_path)) do |tmp_path|
+        File.open(tmp_path, File::WRONLY|File::CREAT|File::EXCL) do |file|
+          file.write YAML::dump(lock)
+        end
+        FileUtils::mv(tmp_path, @lock_path)
+      end
       lock
     end
 
