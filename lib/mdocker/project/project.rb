@@ -116,7 +116,7 @@ module MDocker
       end
     end
 
-    def write_lock(lock={})
+    def write_lock(lock)
       FileUtils::mkdir_p(File.dirname(@lock_path))
       Dir::Tmpname::create('lock', File.dirname(@lock_path)) do |tmp_path|
         File.open(tmp_path, File::WRONLY|File::CREAT|File::EXCL) do |file|
@@ -128,7 +128,7 @@ module MDocker
     end
 
     def create_docker
-      MDocker::Docker.new @config.effective_config
+      MDocker::Docker.new @config
     end
   end
 end

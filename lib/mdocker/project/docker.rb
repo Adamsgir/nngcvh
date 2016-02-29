@@ -2,12 +2,9 @@ require 'shellwords'
 
 module MDocker
 
-  DOCKER_PATH = 'docker'
-
   class Docker
-    def initialize(config, opts={})
-      @opts = opts || {}
-      @opts[:docker] ||= DOCKER_PATH
+
+    def initialize(config)
       @config = config
     end
 
@@ -44,21 +41,21 @@ module MDocker
       command_args << '--rm'
       command_args << '-ti'
       command_args << '-h'
-      command_args << @config.get(:project, :container, :hostname)
+      command_args << @config.hostname
       command_args << '-w'
-      command_args << @config.get(:project, :container, :working_directory)
-      @config.get(:project, :container, :volumes).each do |volume|
+      command_args << @config.working_directory
+      @config.volumes do |volume|
         host, container = volume.first
         command_args << '-v'
         command_args << "#{host.to_s}:#{container}"
       end
-      @config.get(:project, :container, :ports).each do |port|
+      @config.ports do |port|
         host, container = port.first
         command_args << '-p'
         command_args << "#{host.to_s}:#{container}"
       end
       command_args << image_name
-      command_args += @config.get(:project, :container, :command)
+      command_args += @config.command
       docker('run', *command_args, shell:true)
     end
 
@@ -74,7 +71,7 @@ module MDocker
     private
 
     def docker(command, *args, input:nil, mute:true, shell: false)
-      command_line = [@opts[:docker], command] + args
+      command_line = [@config.docker_path, command] + args
       command_line = command_line.shelljoin
       puts command_line
       if shell

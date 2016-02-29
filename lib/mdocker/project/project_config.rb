@@ -14,10 +14,32 @@ module MDocker
       effective_config.get(:project, :name)
     end
 
-    def images
-      effective_config.get(:project, :images).map do |image|
-        block_given? ? (yield image) : image
-      end
+    def images(&block)
+      get_values(:project, :images, &block)
+    end
+
+    def volumes(&block)
+      get_values(:project, :container, :volumes, &block)
+    end
+
+    def ports(&block)
+      get_values(:project, :container, :ports, &block)
+    end
+
+    def command(&block)
+      get_values(:project, :container, :command, &block)
+    end
+
+    def docker_path
+      effective_config.get(:project, :host, :docker, :path)
+    end
+
+    def hostname
+      effective_config.get(:project, :container, :hostname)
+    end
+
+    def working_directory
+      effective_config.get(:project, :container, :working_directory)
     end
 
     def effective_config
@@ -46,6 +68,12 @@ module MDocker
 
     def create_config(sources=[])
       MDocker::Config.new(sources, array_merger: method(:merge_config_arrays))
+    end
+
+    def get_values(*path, &block)
+      effective_config.get(*path, default:[]).map do |value|
+        block ? block.call(value) : value
+      end
     end
 
     def flavor_config(config)

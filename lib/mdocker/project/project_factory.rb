@@ -74,6 +74,9 @@ module MDocker
               uid: user_info[:uid],
               gid: user_info[:gid],
               home: user_home
+          },
+          docker: {
+              path: 'docker'
           }
       }}}
     end
