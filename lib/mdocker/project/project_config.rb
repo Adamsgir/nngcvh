@@ -1,17 +1,13 @@
 module MDocker
   class ProjectConfig
 
-    WORKING_DIRECTORY_OPT = :working_directory
-    PROJECT_DIRECTORY_OPT = :project_directory
-    COMMAND_OPT = :command
     LATEST_LABEL = 'latest'
 
     attr_reader :config, :repository
 
-    def initialize(config_sources, repository, opts={})
+    def initialize(config_sources, repository)
       @config = create_config(config_sources)
       @repository = repository
-      @opts = opts
     end
 
     def name
@@ -49,7 +45,7 @@ module MDocker
     end
 
     def effective_config
-      @effective_config ||= resolve_volumes (inject_options (resolve_images (flavor_config config)))
+      @effective_config ||= resolve_volumes (resolve_images (flavor_config config))
     end
 
     def flavor_config(config)
@@ -58,33 +54,20 @@ module MDocker
           {name: MDocker::Meta::NAME},
           {images: []},
           {container: { hostname: 'docker' }},
-          {container: { user: MDocker::Util::user_info } },
+          {container: { command: %w(/bin/bash -l) } },
+          {container: { user: config.get(:project, :host, :user) } },
           {container: { user: { group: '%{project.container.user.name}' }}},
           {container: { user: { home: user_home }}},
           config.get(:flavors, config.get(:project, :flavor, default:'default'), default:{}),
           ]
-      flavors.inject(create_config) { |cfg, flavor| cfg + {project: flavor} } + config
-    end
 
-    def inject_options(config)
-      if Hash === @opts
-        if String === @opts[WORKING_DIRECTORY_OPT]
-          user_work_dir = @opts[WORKING_DIRECTORY_OPT]
-          config += {project: {container: {WORKING_DIRECTORY_OPT => resolve_path_in_container(config, user_work_dir) }}}
-        end
+      config = flavors.inject(create_config) { |cfg, flavor| cfg + {project: flavor} } + config
 
-        if String === @opts[PROJECT_DIRECTORY_OPT]
-          user_project_dir = @opts[PROJECT_DIRECTORY_OPT]
-          config += {project: {container: {volumes: [{user_project_dir.to_sym => resolve_path_in_container(config, user_project_dir) }]}}}
-        end
+      host_project_dir = config.get(:project, :host, :project_directory)
+      host_working_dir = config.get(:project, :host, :working_directory)
 
-        command = @opts[COMMAND_OPT]
-        command = [command] if String === command
-        if Array === command
-          config += {project: {container: {command: command}}}
-        end
-      end
-      create_config({project: {container: {command: %w(/bin/bash -l)}}}) + config
+      config += {project: { container: { volumes: [ host_project_dir ] }}}
+      config + {project: { container: { working_directory: resolve_path_in_container(config, host_working_dir) }}}
     end
 
     def resolve_volumes(config)
@@ -98,7 +81,7 @@ module MDocker
 
     def resolve_path_in_container(config, path)
       path = File.expand_path path
-      user_home = Dir.home
+      user_home = config.get(:project, :host, :user, :home)
       container_home = File.join(config.get(:project, :container, :user, :home), File::SEPARATOR)
       path.sub(/^#{File.join(user_home, File::SEPARATOR)}/, container_home)
     end

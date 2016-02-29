@@ -9,11 +9,14 @@ mdocker_command = ARGV.size > 0 ? ARGV[0] : 'run'
 begin
   case mdocker_command
     when 'config'
-      project = MDocker::ProjectFactory.new.create({})
+      project = MDocker::ProjectFactory.new.create
       puts project.config.to_s
     when 'clean'
-      project = MDocker::ProjectFactory.new.create({})
+      project = MDocker::ProjectFactory.new.create
       project.clean
+    when 'build'
+      project = MDocker::ProjectFactory.new.create
+      project.build
     when 'run'
       user_command = ARGV.drop(1)
       project = MDocker::ProjectFactory.new.create({command: user_command})
@@ -27,5 +30,6 @@ rescue SystemExit
   raise
 rescue Exception => e
   STDERR.puts 'mdocker: ' + e.message
+  puts e.backtrace
   exit 1
 end
