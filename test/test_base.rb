@@ -63,9 +63,7 @@ module MDocker
 
         config_paths = %W(.mdocker/#{base}.yml project/#{name}.yml)
         project_config = MDocker::ProjectConfig.new(fixture.expand_paths(config_paths),
-                                                    repository,
-                                                    {project_directory: Dir.pwd,
-                                                     working_directory: Dir.pwd})
+                                                    repository)
         yield fixture, project_config
       end
     end

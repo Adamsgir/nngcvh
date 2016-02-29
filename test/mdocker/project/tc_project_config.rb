@@ -46,19 +46,6 @@ module MDocker
       assert_images 'project', [['tool_1', 'test_tool_1', {:name_1 =>'value_1'}], ['tool_2', 'test_tool_2', {:name_2 =>'value_2'}]]
     end
 
-    def test_user_and_working_dirs
-      dir = Dir.pwd
-      container_dir = dir.sub(/^#{Dir.home + '/'}/, '/home/test_user/')
-      with_project_config do |_, config|
-        raw = config.send(:effective_config)
-        assert_equal container_dir, raw.get(:project, :container, :working_directory)
-        volumes = raw.get(:project, :container, :volumes)
-        assert_equal({dir.to_sym => container_dir}, volumes.find do |volume|
-          volume.first[0].to_s == dir
-        end)
-      end
-    end
-
     def test_wrong_image
       assert_raise(StandardError) {
         assert_images 'wrong_image', []

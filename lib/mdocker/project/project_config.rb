@@ -66,8 +66,8 @@ module MDocker
       host_project_dir = config.get(:project, :host, :project_directory)
       host_working_dir = config.get(:project, :host, :working_directory)
 
-      config += {project: { container: { volumes: [ host_project_dir ] }}}
-      config + {project: { container: { working_directory: resolve_path_in_container(config, host_working_dir) }}}
+      config = host_project_dir ? config + {project: { container: { volumes: [ host_project_dir ] }}} : config
+      host_working_dir ? config + {project: { container: { working_directory: resolve_path_in_container(config, host_working_dir) }}} : config
     end
 
     def resolve_volumes(config)
@@ -82,6 +82,7 @@ module MDocker
     def resolve_path_in_container(config, path)
       path = File.expand_path path
       user_home = config.get(:project, :host, :user, :home)
+      return path unless user_home
       container_home = File.join(config.get(:project, :container, :user, :home), File::SEPARATOR)
       path.sub(/^#{File.join(user_home, File::SEPARATOR)}/, container_home)
     end
