@@ -5,9 +5,10 @@ module MDocker
   DOCKER_PATH = 'docker'
 
   class Docker
-    def initialize(opts={})
+    def initialize(config, opts={})
       @opts = opts || {}
       @opts[:docker] ||= DOCKER_PATH
+      @config = config
     end
 
     def generate_build_name(project_name)
@@ -23,7 +24,7 @@ module MDocker
     end
 
     def pull(image_name)
-      docker('pull', image_name)
+      docker('pull', image_name, mute:false)
     end
 
     def build(image_name, contents, args)
@@ -37,6 +38,31 @@ module MDocker
       end
       command_args << '-'
       docker('build', *command_args, input: contents, mute: false)
+    end
+
+    def run(image_name)
+      command_args =  []
+      command_args << '--rm'
+      command_args << '-ti'
+      command_args << '-h'
+      command_args << @config.get(:project, :container, :hostname)
+      command_args << '-w'
+      command_args << @config.get(:project, :container, :working_directory)
+      @config.get(:project, :container, :volumes).each do |volume|
+        host, container = volume.first
+        command_args << '-v'
+        command_args << "#{host.to_s}:#{container}"
+      end
+      @config.get(:project, :container, :ports).each do |port|
+        host, container = port.first
+        command_args << '-p'
+        command_args << "#{host.to_s}:#{container}"
+      end
+      command_args << image_name
+      command_args += @config.get(:project, :container, :command)
+      command = "#{@opts[:docker]} run #{command_args.join(' ')}"
+      puts command
+      system(command)
     end
 
     def remove(*image_names)

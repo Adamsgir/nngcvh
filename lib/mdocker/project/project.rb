@@ -26,8 +26,8 @@ module MDocker
       unless @config.images.find { |image| image[:label] == label }
         raise StandardError.new "image #{label} is not defined in this project"
       end
-      build(force: force_build)
-      0
+      lock = build(force: force_build)
+      create_docker.run(lock[:build_name] + ':' + label)
     end
 
     def build(force: false)
@@ -117,7 +117,7 @@ module MDocker
     end
 
     def create_docker
-      MDocker::Docker.new
+      MDocker::Docker.new @config.effective_config
     end
   end
 end

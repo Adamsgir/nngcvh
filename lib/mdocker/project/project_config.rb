@@ -20,6 +20,10 @@ module MDocker
       end
     end
 
+    def effective_config
+      @effective_config ||= resolve_volumes (resolve_images (flavor_config config))
+    end
+
     def reload
       @effective_config = nil
     end
@@ -42,10 +46,6 @@ module MDocker
 
     def create_config(sources=[])
       MDocker::Config.new(sources, array_merger: method(:merge_config_arrays))
-    end
-
-    def effective_config
-      @effective_config ||= resolve_volumes (resolve_images (flavor_config config))
     end
 
     def flavor_config(config)
