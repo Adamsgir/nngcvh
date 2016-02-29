@@ -31,14 +31,17 @@ module MDocker
     end
 
     def build(force: false)
-      return read_lock unless force || needs_build?
+      old_lock = read_lock
+      return old_lock unless force || needs_build?
       lock = {}
       begin
         write_lock do_build(lock)
+        do_clean(old_lock)
       rescue
         do_clean(lock)
         raise
       end
+      lock
     end
 
     def clean
@@ -88,8 +91,8 @@ module MDocker
       lock
     end
 
-    def do_clean(lock={})
-      return if lock.nil?
+    def do_clean(lock)
+      return unless lock
       docker = create_docker
       (lock[:build_images] || []).each do |info|
         _, image_name = info.first
