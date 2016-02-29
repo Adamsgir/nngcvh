@@ -113,10 +113,9 @@ module MDocker
         user_args[:name] = user_name
         user_args[:group] = user_name
         user_args[:home] = '/home/' + user_name
-        expected << ['latest', user_contents, user_args]
-      else
-        expected << ['latest', 'latest', {}]
+        expected << ['user', user_contents, user_args]
       end
+      expected << ['latest', 'latest', {}]
 
       with_project_config(name: project_name) do |_, config|
         assert_equal expected, (config.images do |image|

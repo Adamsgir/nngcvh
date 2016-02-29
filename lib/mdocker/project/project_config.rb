@@ -2,6 +2,7 @@ module MDocker
   class ProjectConfig
 
     LATEST_LABEL = 'latest'
+    USER_LABEL = 'user'
 
     attr_reader :config, :repository
 
@@ -187,20 +188,26 @@ module MDocker
         elsif String === location
           location = {path: location}
         end
-        image = validate_image(result, {label: label.to_s, location: location, args: args})
 
-        result << image
+        if label.to_s == USER_LABEL && !container_user_root?(config)
+          result << user_image(config)
+        else
+          result << validate_image(result, {label: label.to_s, location: location, args: args})
+        end
       end
 
       raise StandardError.new 'no images defined' if images.empty?
 
-      if container_user_root?(config)
-        images << {label: LATEST_LABEL, location: {tag: LATEST_LABEL}, args: {}}
-      else
-        docker_file = File.expand_path File.join(MDocker::Util::dockerfiles_dir, 'user')
-        images << {label: LATEST_LABEL, location: {path: docker_file}, args: config.get(:project, :container, :user)}
+      unless container_user_root?(config) || images.find { |i| i[:label] == USER_LABEL }
+        images << user_image(config)
       end
+      images << {label: LATEST_LABEL, location: {tag: LATEST_LABEL}, args: {}}
       config.set(:project, :images, images.map {|i| load_image(i) })
+    end
+
+    def user_image(config)
+      docker_file = File.expand_path File.join(MDocker::Util::dockerfiles_dir, 'user')
+      {label: USER_LABEL, location: {path: docker_file}, args: config.get(:project, :container, :user)}
     end
 
     def validate_image(images, image)
