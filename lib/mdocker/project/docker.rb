@@ -25,7 +25,7 @@ module MDocker
 
     def build(image_name, contents, args)
       command_args =  []
-      command_args << '--force-rm=true'
+      command_args << '--force-rm'
       command_args << '-t'
       command_args << image_name
       args.each do |k,v|

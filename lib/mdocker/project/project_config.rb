@@ -98,7 +98,7 @@ module MDocker
         config = config.set(:project, :container, :working_directory, resolve_path_in_container(config, host_working_dir))
       end
 
-      volumes = config.get(:project, :container, :volumes).inject([]) do |result, volume|
+      volumes = config.get(:project, :container, :volumes, default:[]).inject([]) do |result, volume|
         if Hash === volume
           volume.inject(result) { |r, pair| r << {host: pair[0].to_s, container: (pair[1] && !pair[1].to_s.empty?) ? pair[1].to_s : nil} }
         elsif volume && !volume.to_s.empty?
@@ -192,7 +192,7 @@ module MDocker
         if label.to_s == USER_LABEL && !container_user_root?(config)
           result << user_image(config)
         else
-          result << validate_image(result, {label: label.to_s, location: location, args: args})
+          result << validate_image(result, {label: label.to_s, image: location, args: args})
         end
       end
 
@@ -201,22 +201,22 @@ module MDocker
       unless container_user_root?(config) || images.find { |i| i[:label] == USER_LABEL }
         images << user_image(config)
       end
-      images << {label: LATEST_LABEL, location: {tag: LATEST_LABEL}, args: {}}
+      images << {label: LATEST_LABEL, image: {tag: LATEST_LABEL}, args: {}}
       config.set(:project, :images, images.map {|i| load_image(i) })
     end
 
     def user_image(config)
       docker_file = File.expand_path File.join(MDocker::Util::dockerfiles_dir, 'user')
-      {label: USER_LABEL, location: {path: docker_file}, args: config.get(:project, :container, :user)}
+      {label: USER_LABEL, image: {path: docker_file}, args: config.get(:project, :container, :user)}
     end
 
     def validate_image(images, image)
       raise StandardError.new "reserved image label '#{image[:label]}'" if image[:label] == LATEST_LABEL
       raise StandardError.new "duplicate image label '#{image[:label]}'" if images.find { |r| r[:label] == image[:label] }
 
-      if image[:location][:pull] && !images.empty?
+      if image[:image][:pull] && !images.empty?
         raise StandardError.new("image '#{image[:label]}' of type 'pull' may only be the first image in the sequence")
-      elsif image[:location][:tag] && images.empty?
+      elsif image[:image][:tag] && images.empty?
         raise StandardError.new("tag '#{image[:label]}' may only follow another image definition")
       else
         image
@@ -224,8 +224,8 @@ module MDocker
     end
 
     def load_image(image)
-      object = @repository.object(image[:location])
-      raise StandardError.new "unrecognized image specification:\n'#{image[:location]}'" if object.nil?
+      object = @repository.object(image[:image])
+      raise StandardError.new "unrecognized image specification:\n'#{image[:image]}'" if object.nil?
       object.fetch if object.outdated?
       image.merge!({contents: object.contents})
     end

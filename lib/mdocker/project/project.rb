@@ -73,10 +73,10 @@ module MDocker
 
       @config.images.inject(nil) do |previous, image|
         name = "#{lock[:build_name]}:#{image[:label]}"
-        rc = if image[:location][:pull]
+        rc = if image[:image][:pull]
           rc = docker.has_image?(image[:contents]) ? 0 : docker.pull(image[:contents])
           rc == 0 ? docker.tag(image[:contents], name) : rc
-        elsif image[:location][:tag]
+        elsif image[:image][:tag]
           name = "#{lock[:build_name]}:#{image[:contents]}"
           docker.tag(previous, name)
         else
