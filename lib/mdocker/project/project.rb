@@ -16,7 +16,8 @@ module MDocker
       digest.update(@config.name)
       digest = @config.images.inject(digest) do |d, image|
         d.update(image[:name])
-        d.update(image[:contents])
+        contents = image[:image][:contents] || image[:image][:tag] || image[:image][:pull]
+        d.update(contents)
         d.update(image[:args].to_s)
       end
       digest.hexdigest!
@@ -74,13 +75,13 @@ module MDocker
       @config.images.inject(nil) do |previous, image|
         name = "#{lock[:build_name]}:#{image[:name]}"
         rc = if image[:image][:pull]
-          rc = docker.has_image?(image[:contents]) ? 0 : docker.pull(image[:contents])
-          rc == 0 ? docker.tag(image[:contents], name) : rc
+          rc = docker.has_image?(image[:pull]) ? 0 : docker.pull(image[:pull])
+          rc == 0 ? docker.tag(image[:pull], name) : rc
         elsif image[:image][:tag]
-          name = "#{lock[:build_name]}:#{image[:contents]}"
+          name = "#{lock[:build_name]}:#{image[:tag]}"
           docker.tag(previous, name)
         else
-          contents = image[:contents]
+          contents = image[:image][:contents]
           contents = contents.sub(/^(FROM\s.+)$/, 'FROM ' + previous) if previous
           docker.build(name, contents, image[:args])
         end

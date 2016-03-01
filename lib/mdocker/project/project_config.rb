@@ -174,40 +174,30 @@ module MDocker
     end
 
     def resolve_images(config)
-      images = config.get(:project, :images, default:[])
-      images = images.inject([]) do |result, desc|
-        desc = {desc.to_sym => nil} if String === desc
-        next result unless Hash === desc
-
-        label, location = desc.first
-        args = desc[:args] || {}
-
-        location = {tag: label.to_s} if location.nil? || (String === location && location.empty?)
-        if docker_file?(location)
-          location = {contents: location}
-        elsif String === location
-          location = {path: location}
-        end
-
-        if label.to_s == USER_LABEL && !container_user_root?(config)
-          result << user_image(config)
-        else
-          result << validate_image(result, {name: label.to_s, image: location, args: args})
-        end
-      end
+      images = ImagesExpansion::expand(config.get(:project, :images, default:[]))
+      images = images.inject([], &method(:validate_image))
 
       raise StandardError.new 'no images defined' if images.empty?
 
-      unless container_user_root?(config) || images.find { |i| i[:name] == USER_LABEL }
-        images << user_image(config)
-      end
-      images << {name: LATEST_LABEL, image: {tag: LATEST_LABEL}, args: {}}
-      config.set(:project, :images, images.map {|i| load_image(i) })
+      images = add_or_replace_user_image(config, images) unless container_user_root?(config)
+      images = images + [{name: LATEST_LABEL, image: {tag: LATEST_LABEL}}]
+      images = images.each {|i| i[:args] ||= {}}
+      images = images.map(&method(:load_image))
+
+      config.set(:project, :images, images)
     end
 
-    def user_image(config)
+    def add_or_replace_user_image(config, images)
       docker_file = File.expand_path File.join(MDocker::Util::dockerfiles_dir, 'user')
-      {name: USER_LABEL, image: {path: docker_file}, args: config.get(:project, :container, :user)}
+      user_image = {name: USER_LABEL, image: {path: docker_file}, args: config.get(:project, :container, :user)}
+      existing = images.find { |i| i[:name] == USER_LABEL }
+      if existing
+        user_image.merge!(existing)
+        existing.merge!(user_image)
+      else
+        images << user_image
+      end
+      images
     end
 
     def validate_image(images, image)
@@ -218,16 +208,20 @@ module MDocker
         raise StandardError.new("image '#{image[:name]}' of type 'pull' may only be the first image in the sequence")
       elsif image[:image][:tag] && images.empty?
         raise StandardError.new("tag '#{image[:name]}' may only follow another image definition")
-      else
-        image
       end
+      images << image
     end
 
     def load_image(image)
-      object = @repository.object(image[:image])
-      raise StandardError.new "unrecognized image specification:\n'#{image[:image]}'" if object.nil?
-      object.fetch if object.outdated?
-      image.merge!({contents: object.contents})
+      return image if image[:image][:tag] || image[:image][:pull]
+      contents = image[:image][:contents]
+      contents ||= begin
+        object = @repository.object(image[:image])
+        raise StandardError.new "unrecognized image specification:\n'#{image[:image]}'" if object.nil?
+        object.fetch if object.outdated?
+        object.contents
+      end
+      image.merge({image: {contents: contents}})
     end
 
     def container_user_root?(config)

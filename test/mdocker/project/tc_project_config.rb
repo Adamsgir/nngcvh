@@ -119,7 +119,7 @@ module MDocker
 
       with_project_config(name: project_name) do |_, config|
         assert_equal expected, (config.images do |image|
-          [image[:name], image[:contents], image[:args]]
+          [image[:name], image[:image][:contents] || image[:image][:tag] || image[:image][:pull], image[:args]]
         end)
       end
     end
