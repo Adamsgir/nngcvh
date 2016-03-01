@@ -184,7 +184,7 @@ module MDocker
 
         location = {tag: label.to_s} if location.nil? || (String === location && location.empty?)
         if docker_file?(location)
-          location = {raw: location}
+          location = {contents: location}
         elsif String === location
           location = {path: location}
         end
