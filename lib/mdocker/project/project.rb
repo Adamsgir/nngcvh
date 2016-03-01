@@ -15,7 +15,7 @@ module MDocker
       digest = Digest::SHA1.new
       digest.update(@config.name)
       digest = @config.images.inject(digest) do |d, image|
-        d.update(image[:label])
+        d.update(image[:name])
         d.update(image[:contents])
         d.update(image[:args].to_s)
       end
@@ -23,7 +23,7 @@ module MDocker
     end
 
     def run(label: 'latest', force_build:false)
-      unless @config.images.find { |image| image[:label] == label }
+      unless @config.images.find { |image| image[:name] == label }
         raise StandardError.new "image #{label} is not defined in this project"
       end
       lock = build(force: force_build)
@@ -72,7 +72,7 @@ module MDocker
       lock[:build_images] = []
 
       @config.images.inject(nil) do |previous, image|
-        name = "#{lock[:build_name]}:#{image[:label]}"
+        name = "#{lock[:build_name]}:#{image[:name]}"
         rc = if image[:image][:pull]
           rc = docker.has_image?(image[:contents]) ? 0 : docker.pull(image[:contents])
           rc == 0 ? docker.tag(image[:contents], name) : rc
@@ -85,7 +85,7 @@ module MDocker
           docker.build(name, contents, image[:args])
         end
         raise StandardError.new('docker build failed') if rc != 0
-        lock[:build_images] << {image[:label] => name}
+        lock[:build_images] << {image[:name] => name}
         name
       end
       lock
