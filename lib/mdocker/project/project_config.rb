@@ -94,38 +94,30 @@ module MDocker
 
     def resolve_paths(config)
       host_working_dir = config.get(:project, :host, :working_directory)
-      if host_working_dir
-        config = config.set(:project, :container, :working_directory, resolve_path_in_container(config, host_working_dir))
-      end
+      host_project_dir = config.get(:project, :host, :project_directory)
+      host_home = config.get(:project, :host, :user, :home)
+      container_home = config.get(:project, :container, :user, :home)
+      container_project_dir = host_project_dir.sub(/^#{host_home + File::SEPARATOR}/, container_home + File::SEPARATOR)
+      container_working_dir = host_working_dir.sub(/^#{host_home + File::SEPARATOR}/, container_home + File::SEPARATOR)
 
-      volumes = config.get(:project, :container, :volumes, default:[]).inject([]) do |result, volume|
-        if Hash === volume
-          volume.inject(result) { |r, pair| r << {host: pair[0].to_s, container: (pair[1] && !pair[1].to_s.empty?) ? pair[1].to_s : nil} }
-        elsif volume && !volume.to_s.empty?
-          result << {host: volume.to_s}
-        end
-      end
+      config = config.set(:project, :container, :working_directory, container_working_dir)
+      config = config.set(:project, :container, :project_directory, container_project_dir)
+
+      paths_map = {
+          home: {host_home => container_home},
+          root: {host_project_dir => container_working_dir},
+      }
+      volumes = VolumesExpansion::expand(config.get(:project, :container, :volumes, default:[]), roots_map:paths_map)
 
       volumes = volumes.inject([]) do |result, volume|
-        named_container = named_container?(volume[:host])
-        unless volume[:container]
-          raise StandardError.new("shared volume '#{volume[:host]}' have to be mapped a path in the container") if named_container
-          volume[:container] = volume[:host]
-        end
-        volume[:host] = named_container ? volume[:host] : File.expand_path(volume[:host], config.get(:project, :host, :project_directory))
-        volume[:container] = resolve_path_in_container(config, volume[:container])
         if result.find { |v| v[:host] == volume[:host] || v[:container] == volume[:container] }
           raise StandardError.new("duplicate volume definition: '#{volume[:host]}:#{volume[:container]}'")
         end
         result << volume
       end
-
-      host_project_dir = config.get(:project, :host, :project_directory)
-      container_project_dir = resolve_path_in_container(config, host_project_dir)
       unless volumes.find { |v| v[:host] == host_project_dir || v[:container] == container_project_dir }
         volumes << {host: host_project_dir, container: container_project_dir }
       end
-
       config.set(:project, :container, :volumes, volumes)
     end
 
@@ -148,10 +140,6 @@ module MDocker
       config.set(:project, :container, :ports, ports)
     end
 
-    def named_container?(path)
-      path.match(/^[0-9a-zA-Z][0-9a-zA-Z\.-_]*$/)
-    end
-
     def port_number?(port)
       begin
         Integer(port)
@@ -163,14 +151,6 @@ module MDocker
     def all_ports?(port)
       port = port.to_s.downcase
       port == '*' || port == 'all' || port == 'true'
-    end
-
-    def resolve_path_in_container(config, path)
-      path = File.expand_path path
-      user_home = config.get(:project, :host, :user, :home)
-      return path unless user_home
-      container_home = File.join(config.get(:project, :container, :user, :home), File::SEPARATOR)
-      path.sub(/^#{File.join(user_home, File::SEPARATOR)}/, container_home)
     end
 
     def resolve_images(config)
@@ -226,10 +206,6 @@ module MDocker
 
     def container_user_root?(config)
       config.get(:project, :container, :root, default:false)
-    end
-
-    def docker_file?(contents)
-      String === contents && (contents.include?('\n') || contents.match(/^FROM\s+[a-zA-Z0-9:\.-_@]+$/))
     end
 
   end

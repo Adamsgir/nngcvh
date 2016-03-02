@@ -64,6 +64,7 @@ module MDocker
         project_config = MDocker::ProjectConfig.new(
             [{project: {host: {user: Util::user_info }}}] +
             [{project: {host: {project_directory: fixture.expand_path('project') }}}] +
+            [{project: {host: {working_directory: fixture.expand_path('project') }}}] +
             [{project: {host: {user: {home: Dir.home } }}}] +
               fixture.expand_paths(config_paths),
             repository)

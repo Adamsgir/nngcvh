@@ -80,19 +80,6 @@ module MDocker
       end
     end
 
-    def test_named_volume_no_path
-      assert_raise(StandardError) {
-        with_project_config(name: 'volumes_named_no_path') do |_, config|
-          config.volumes
-        end
-      }
-      assert_raise(StandardError) {
-        with_project_config(name: 'volumes_named_no_path2') do |_, config|
-          config.volumes
-        end
-      }
-    end
-
     def test_duplicated_volumes
       assert_raise(StandardError) {
         with_project_config(name: 'volumes_duplicate_container') do |_, config|

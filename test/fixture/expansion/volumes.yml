@@ -1,0 +1,65 @@
+container:
+  home: /home/container
+  project: /project-host
+
+host:
+  home: /home/host
+  project: /project-container
+
+sugar:
+
+  pair:
+    - host: /path/to/host
+      container: /path/to/container
+    - /path/to/host: /path/to/container
+    - "/path/to/host:/path/to/container"
+
+  named:
+    - host: name
+      container: /path/to/container
+    - name: /path/to/container
+    - "name:/path/to/container"
+
+  host_expansion:
+    - host: "%{host.home}/path"
+      container: "%{container.home}/path"
+    - host: ~/path
+      container: ~/path
+    - ~/path
+    - ~/path:
+
+  container_expansion:
+    - host: /path
+      container: "%{container.home}/path"
+    - host: /path
+      container: ~/path
+    - /path: ~/path
+
+  both_expansion:
+    - host: "%{host.home}/host"
+      container: "%{container.home}/container"
+    - host: ~/host
+      container: ~/container
+    - ~/host: ~/container
+
+  project_relative:
+    - host: "%{host.project}/path/dir"
+      container: "%{container.project}/path/dir"
+    - host: path/dir
+      container: path/dir
+    - path/dir:
+    - path/dir
+
+  boolean:
+    - host: "%{host.project}/path/dir"
+      container: "%{container.project}/true"
+    - host: path/dir
+      container: true
+    - path/dir: true
+
+  integer:
+    - host: "%{host.project}/path/dir"
+      container: "%{container.project}/10"
+    - host: path/dir
+      container: 10
+    - path/dir: 10

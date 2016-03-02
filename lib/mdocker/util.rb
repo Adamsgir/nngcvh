@@ -71,6 +71,12 @@ module MDocker
       rand(36**length).to_s(36)
     end
 
+    def self.assert_type(*expected, value:value)
+      match = expected.find { |t| t === value}
+      raise StandardError.new "value of '#{expected.join(' ')}' type#{expected.size > 1 ? 's' : ''} " +
+                                  "expected, but value of '#{value.class}' type found:\n#{value.to_yaml}" unless match
+    end
+
     def self.dockerfiles_dir
       File.expand_path(File.join(data_dir, 'dockerfiles'))
     end

@@ -2,14 +2,16 @@ module MDocker
   class ImagesExpansion
 
     def self.expand(images=[])
-      assert_type(Array, value:images)
+      Util::assert_type(Array, value:images)
       images.inject([]) do |result, image|
         result << expand_image(image)
       end
     end
 
+    private
+
     def self.expand_image(image)
-      assert_type(Hash, String, value:image)
+      Util::assert_type(Hash, String, value:image)
       case image
         when String
           name = expand_tag_value image
@@ -43,28 +45,20 @@ module MDocker
     end
 
     def self.expand_tag_value(value)
-      assert_type(String, value:value)
+      Util::assert_type(String, value:value)
       raise StandardError.new "tag '#{value}' includes illegal characters" unless value.match /^[0-9A-Za-z\.-_]+$/
       value
     end
 
     def self.expand_image_value(value)
-      assert_type(String, value:value)
+      Util::assert_type(String, value:value)
 
       value = value.strip
-      pull_match = value.match(/^pull\s+(?<image>[0-9a-z\.-_]+([@:][0-9a-z\.-_]+)?)$/i)
+      pull_match = value.match(/^pull\s+(?<image>[0-9a-z\.\-_]+([@:][0-9a-z\.\-_]+)?)$/i)
 
       return {pull: pull_match[:image]} if pull_match
       return {contents: value} if value.include?('\n') || value.match(/^([a-z]+)\s+(.*)$/i)
       return {path: value}
-    end
-
-    private
-
-    def self.assert_type(*expected, value:value)
-      match = expected.find { |t| t === value}
-      raise StandardError.new "value of '#{expected.join(' ')}' type#{expected.size > 1 ? 's' : ''} " +
-                                  "expected, but value of '#{value.class}' type found:\n#{value.to_yaml}" unless match
     end
 
   end
