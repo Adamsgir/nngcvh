@@ -151,8 +151,8 @@ module MDocker
       user_image = {name: USER_LABEL, image: {path: docker_file}, args: config.get(:project, :container, :user)}
       existing = images.find { |i| i[:name] == USER_LABEL }
       if existing
-        user_image.merge!(existing)
-        existing.merge!(user_image)
+        existing[:image] = user_image[:image]
+        existing[:args] = user_image[:args]
       else
         images << user_image
       end
