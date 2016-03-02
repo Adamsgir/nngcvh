@@ -35,6 +35,7 @@ module MDocker
           elsif copy.size > 1 && copy[:name]
             name = expand_tag_value copy[:name]
             image = copy[:image] ? copy[:image] : copy.select { |k, _| k != :name }
+            image = expand_image_value(image) if String === image
             {name: name, image: image}
           else
             raise StandardError.new("unrecognized image description:\n#{image.to_yaml}")

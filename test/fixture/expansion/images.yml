@@ -7,6 +7,11 @@ sugar:
         path: some_path
       args:
         some_arg: some_value
+    # full, image one line
+    - name: some_name
+      image: some_path
+      args:
+        some_arg: some_value
     # named
     - some_name:
         path: some_path
@@ -32,6 +37,9 @@ sugar:
     - name: some_name
       image:
         path: some_path
+    # full, image one line
+    - name: some_name
+      image: some_path
     # named
     - some_name:
         path: some_path
@@ -61,6 +69,9 @@ sugar:
     - name: some_name
       image:
         pull: some_image
+    # full, image one line
+    - name: some_name
+      image: pull some_image
     # named
     - some_name:
         pull: some_image
@@ -75,6 +86,11 @@ sugar:
     - name: some_name
       image:
         contents: FROM some_image
+      args:
+        some_arg: some_value
+    # full, image one line
+    - name: some_name
+      image: FROM some_image
       args:
         some_arg: some_value
     # named
@@ -97,6 +113,9 @@ sugar:
       - name: some_name
         image:
           contents: FROM some_image
+      # full, image one line
+      - name: some_name
+        image: FROM some_image
       # named
       - some_name:
           contents: FROM some_image
@@ -111,6 +130,9 @@ sugar:
       - name: some_name
         image:
           contents: RUN some_command
+      # full, image one line
+      - name: some_name
+        image: RUN some_command
       # named
       - some_name:
           contents: RUN some_command
