@@ -75,17 +75,17 @@ module MDocker
       @config.images.inject(nil) do |previous, image|
         name = "#{lock[:build_name]}:#{image[:name]}"
         rc = if image[:image][:pull]
-          rc = docker.has_image?(image[:pull]) ? 0 : docker.pull(image[:pull])
-          rc == 0 ? docker.tag(image[:pull], name) : rc
+          rc = docker.has_image?(image[:image][:pull]) ? 0 : docker.pull(image[:image][:pull])
+          rc == 0 ? docker.tag(image[:image][:pull], name) : rc
         elsif image[:image][:tag]
-          name = "#{lock[:build_name]}:#{image[:tag]}"
+          name = "#{lock[:build_name]}:#{image[:image][:tag]}"
           docker.tag(previous, name)
         else
           contents = image[:image][:contents]
           contents = contents.sub(/^(FROM\s.+)$/, 'FROM ' + previous) if previous
           docker.build(name, contents, image[:args])
         end
-        raise StandardError.new('docker build failed') if rc != 0
+        raise StandardError.new("docker build failed, rc=#{rc}") if rc != 0
         lock[:build_images] << {image[:name] => name}
         name
       end
