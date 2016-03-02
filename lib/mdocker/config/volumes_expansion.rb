@@ -10,12 +10,12 @@ module MDocker
       end
     end
 
+    private
+
     def self.expand_path(path, root, home)
       path = home ? path.sub(/^~\//, home + '/') : path
       root ? File.expand_path(path, root) : File.expand_path(path)
     end
-
-    private
 
     def self.expand_volume(volume, roots_map)
       Util::assert_type(Hash, String, value: volume)
@@ -46,7 +46,7 @@ module MDocker
                container: expand_path(container, container_root, container_home)}
             end
           else
-            raise StandardError.new "unrecognized volume definition:\n#{volume.to_yaml}"
+            raise StandardError.new "unrecognized volume mapping definition:\n#{volume.to_yaml}"
           end
         else
           # ignored

@@ -1,0 +1,58 @@
+sugar:
+
+  spec:
+    - mapping: ab:bc:cd/tcp
+    - ab:bc:cd/tcp
+    - "ab:bc:cd/tcp"
+    - ab: bc:cd/tcp
+
+  number:
+    - mapping: 80:80
+    - mapping: 80
+    - mapping:
+        80:
+    - 80: 80
+    - 80:80
+    - "80:80"
+    - 80:
+    - 80
+
+  pair:
+    - mapping: 80:8080
+    - mapping:
+        80: 8080
+    - 80: 8080
+    - 80:8080
+    - "80:8080"
+
+hashes:
+  sub_hashes:
+    - mapping:
+        80: 8080
+        90: 90
+
+  sub_hashes2:
+    - 80: 8080
+      90: 90
+
+  sub_hashes3:
+    - 80: 8080
+      90:
+
+  sub_hashes4:
+    - 80: 8080
+      mapping:
+        90:
+
+all:
+  - ports: "*"
+  - ports: all
+  - ports: TRUE
+  - ports:
+      - mapping:
+          80: 80
+          "*":
+  - ports:
+    - "*"
+  - ports:
+    - "*":

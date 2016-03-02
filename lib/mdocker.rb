@@ -4,6 +4,7 @@ require 'mdocker/util'
 require 'mdocker/config/config'
 require 'mdocker/config/images_expansion'
 require 'mdocker/config/volumes_expansion'
+require 'mdocker/config/ports_expansion'
 
 require 'mdocker/repository/repository'
 require 'mdocker/repository/repository_object'

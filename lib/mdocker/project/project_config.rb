@@ -78,17 +78,22 @@ module MDocker
     end
 
     def flavor_config(config)
-      user_home = container_user_root?(config) ? '/root' : '/home/%{project.container.user.name}'
       flavors = [
           {name: MDocker::Meta::NAME},
           {images: []},
           {container: { hostname: 'docker' }},
           {container: { command: %w(/bin/bash -l) } },
+          ]
+      if container_user_root?(config)
+        flavors += [{container: { user: { name: 'root', uid: 0, gid: 0, group: 'root', home: '/root' }}}]
+      else
+        flavors += [
           {container: { user: config.get(:project, :host, :user) } },
           {container: { user: { group: '%{project.container.user.name}' }}},
-          {container: { user: { home: user_home }}},
-          config.get(:flavors, config.get(:project, :flavor, default:'default'), default:{}),
-          ]
+          {container: { user: { home: '/home/%{project.container.user.name}' }}},
+        ]
+      end
+      flavors += [config.get(:flavors, config.get(:project, :flavor, default:'default'), default:{})]
       flavors.inject(create_config) { |cfg, flavor| cfg + {project: flavor} } + config
     end
 
@@ -122,35 +127,9 @@ module MDocker
     end
 
     def resolve_ports(config)
-      ports = config.get(:project, :container, :ports)
-      ports = [ports] unless Array === ports || Hash === ports
-      ports = ports.inject([]) do |result, port|
-        if all_ports? port
-          break [{mapping: :ALL}]
-        elsif Hash === port
-          result + port.map { |pair| {mapping: pair.join(':')} }
-        elsif Array === port
-          result << {mapping: port.join(':')}
-        else
-          result << {mapping: port.to_s}
-        end
-      end
-      ports = [{mapping: :ALL}] if ports.include?({mapping: :ALL})
-      ports = ports.map {|p| {mapping: port_number?(p[:mapping]) ? p[:mapping] + ':' + p[:mapping] : p[:mapping] } }
+      ports = config.get(:project, :container, :ports, default: [])
+      ports = PortsExpansion::expand(ports)
       config.set(:project, :container, :ports, ports)
-    end
-
-    def port_number?(port)
-      begin
-        Integer(port)
-      rescue
-        #
-      end
-    end
-
-    def all_ports?(port)
-      port = port.to_s.downcase
-      port == '*' || port == 'all' || port == 'true'
     end
 
     def resolve_images(config)
