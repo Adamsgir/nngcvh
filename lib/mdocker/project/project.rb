@@ -82,7 +82,7 @@ module MDocker
           docker.tag(previous, name)
         else
           contents = image[:image][:contents]
-          contents = contents.sub(/^(FROM\s.+)$/, 'FROM ' + previous) if previous
+          contents = override_from(contents, previous)
           docker.build(name, contents, image[:args])
         end
         raise StandardError.new("docker build failed, rc=#{rc}") if rc != 0
@@ -90,6 +90,15 @@ module MDocker
         name
       end
       lock
+    end
+
+    def override_from(contents, previous=nil)
+      if previous
+        r = contents.sub(/^\s*FROM\s+.+$/i, 'FROM ' + previous)
+        r == contents ? "FROM #{previous}\n#{contents}" : r
+      else
+        contents.match(/^\s*FROM\s+.+$/i) ? contents : "FROM scratch\n#{contents}"
+      end
     end
 
     def do_clean(lock)
