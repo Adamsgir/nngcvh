@@ -1,13 +1,13 @@
 module MDocker
-  class ProjectConfig
+  class ContainerConfig
 
     LATEST_LABEL = 'latest'
     USER_LABEL = 'user'
 
     attr_reader :config, :repository
 
-    def initialize(config_sources, repository)
-      @config = create_config(config_sources)
+    def initialize(config_sources, repository, defaults:{}, overrides:{})
+      @config = create_config(config_sources, defaults: defaults, overrides: overrides)
       @repository = repository
     end
 
@@ -67,7 +67,8 @@ module MDocker
       MERGE_CONFIG_ARRAYS.include?(key) ? (a1 + a2) : (a2)
     end
 
-    def create_config(sources=[])
+    def create_config(sources=[], defaults: {}, overrides: {})
+      sources = [defaults] + sources + [overrides]
       MDocker::Config.new(sources, array_merger: method(:merge_config_arrays))
     end
 

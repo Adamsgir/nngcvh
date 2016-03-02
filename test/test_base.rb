@@ -51,7 +51,7 @@ module MDocker
       end
     end
 
-    def with_project_config(fixture_name: PROJECT_FIXTURE_NAME, name: 'project', base: 'settings')
+    def with_container_config(fixture_name: PROJECT_FIXTURE_NAME, name: 'project', base: 'settings')
       with_fixture(fixture_name) do |fixture|
 
         repository = repository(fixture,
@@ -61,19 +61,26 @@ module MDocker
                                 'project/.mdocker/tmp')
 
         config_paths = %W(.mdocker/#{base}.yml project/#{name}.yml)
-        project_config = MDocker::ProjectConfig.new(
-            [{project: {host: {user: Util::user_info }}}] +
-            [{project: {host: {project_directory: fixture.expand_path('project') }}}] +
-            [{project: {host: {working_directory: fixture.expand_path('project') }}}] +
-            [{project: {host: {user: {home: Dir.home } }}}] +
-              fixture.expand_paths(config_paths),
-            repository)
-        yield fixture, project_config
+        defaults =
+            {project: {host:
+                {
+                 user: Util::user_info,
+                 project_directory: fixture.expand_path('project'),
+                 working_directory: fixture.expand_path('project')
+                }
+            }}
+        defaults[:project][:host][:user][:home] = Dir.home
+
+        container_config = MDocker::ContainerConfig.new(
+            fixture.expand_paths(config_paths),
+            repository,
+            defaults: defaults)
+        yield fixture, container_config
       end
     end
 
     def with_project(name: 'project', base: 'settings')
-      with_project_config(name: name, base: base) do |fixture, config|
+      with_container_config(name: name, base: base) do |fixture, config|
         yield fixture, MDocker::Project.new(config, fixture.expand_path(PROJECT_LOCK_PATH))
       end
     end

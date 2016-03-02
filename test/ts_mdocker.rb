@@ -9,5 +9,5 @@ require_relative 'mdocker/config/tc_images_expansion'
 require_relative 'mdocker/config/tc_volumes_expansion'
 require_relative 'mdocker/config/tc_ports_expansion'
 
-require_relative 'mdocker/project/tc_project_config'
+require_relative 'mdocker/project/tc_container_config'
 require_relative 'mdocker/project/tc_project'

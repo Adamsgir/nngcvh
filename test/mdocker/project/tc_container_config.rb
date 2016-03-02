@@ -1,7 +1,7 @@
 require_relative '../../test_helper'
 
 module MDocker
-  class ProjectConfigTest < Test::Unit::TestCase
+  class ContainerConfigTest < Test::Unit::TestCase
 
     include MDocker::TestBase
 
@@ -63,7 +63,7 @@ module MDocker
     def test_volumes
       host_home = Dir.home
       container_home = '/home/test_user'
-      with_project_config(name: 'volumes') do |fixture, config|
+      with_container_config(name: 'volumes') do |fixture, config|
         expected = [
             {host: "#{host_home}/host", container: "#{container_home}/host"},
             {host: '/host', container: '/host'},
@@ -82,12 +82,12 @@ module MDocker
 
     def test_duplicated_volumes
       assert_raise(StandardError) {
-        with_project_config(name: 'volumes_duplicate_container') do |_, config|
+        with_container_config(name: 'volumes_duplicate_container') do |_, config|
           config.volumes
         end
       }
       assert_raise(StandardError) {
-        with_project_config(name: 'volumes_duplicate_host') do |_, config|
+        with_container_config(name: 'volumes_duplicate_host') do |_, config|
           config.volumes
         end
       }
@@ -104,7 +104,7 @@ module MDocker
       end
       expected << ['latest', 'latest', {}]
 
-      with_project_config(name: project_name) do |_, config|
+      with_container_config(name: project_name) do |_, config|
         assert_equal expected, (config.images do |image|
           [image[:name], image[:image][:contents] || image[:image][:tag] || image[:image][:pull], image[:args]]
         end)

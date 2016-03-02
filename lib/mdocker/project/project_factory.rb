@@ -43,10 +43,13 @@ module MDocker
           File.join(project_dir, name + '.yml'),
           File.join(project_dir, dot_name + '.yml')
       ]
-      project_config = MDocker::ProjectConfig.new([host_configuration(opts)] + config_files + [user_configuration(opts)], repository)
+      container_config = MDocker::ContainerConfig.new(config_files,
+                                                    repository,
+                                                    defaults: host_configuration(opts),
+                                                    overrides: user_configuration(opts))
 
       project_lock_file = File.join(project_dir, dot_name, name + '.lock')
-      MDocker::Project.new(project_config, project_lock_file)
+      MDocker::Project.new(container_config, project_lock_file)
     end
 
     private
