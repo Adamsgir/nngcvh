@@ -46,10 +46,10 @@ module MDocker
       config = MDocker::ConfigFactory.new.create(*config_files,
                                           defaults: project_defaults(opts),
                                           overrides: project_overrides(opts))
-      project_config = MDocker::ProjectConfig.new(config, repository)
+      project_config = MDocker::ProjectConfig.new(config)
 
       project_lock_file = File.join(project_dir, dot_name, name + '.yml')
-      MDocker::Project.new(project_config, project_lock_file)
+      MDocker::Project.new(project_config, lock_path:project_lock_file, repository: repository)
     end
 
     private
@@ -132,17 +132,5 @@ module MDocker
         }],
       }
     end
-
-    # for each container:
-
-    # 1. set container name if not already set
-    # 2. set user to root when user is not specified, ensure user.home
-    # 3. derive container.project.path from host.project.path replacing home part
-    # 3. set container.pwd as relative to host.project.path, then resolve.
-    # 4. remove volumes with empty host part
-    # 5. resolve volumes.container using container.user.home and container.project.path
-    # 6. resolve ports
-    # 7. resolve images
-    # 8. add user image if user is not 'root'
   end
 end

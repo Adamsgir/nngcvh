@@ -1,9 +1,10 @@
 module MDocker
   class Project
 
-    def initialize(project_config, lock_path)
+    def initialize(project_config, lock_path:, repository:)
       @project_config = project_config
       @lock_path = lock_path
+      @repository = repository
     end
 
     def run
@@ -61,6 +62,7 @@ module MDocker
     def create_container(container_config)
       MDocker::Container.new(
           container_config,
+          repository: @repository,
           docker: create_docker)
     end
 

@@ -4,10 +4,9 @@ module MDocker
     LATEST_LABEL = 'latest'
     USER_LABEL = 'user'
 
-    attr_reader :config, :repository
+    attr_reader :config
 
-    def initialize(config, repository)
-      @repository = repository
+    def initialize(config)
       @config = init_container(init_user(config))
     end
 
@@ -106,7 +105,6 @@ module MDocker
 
       images = images + [{name: LATEST_LABEL, image: {tag: LATEST_LABEL}}]
       images = images.each {|i| i[:args] ||= {}}
-      images = images.map(&method(:load_image))
 
       config.set(:images, images)
     end
@@ -173,18 +171,6 @@ module MDocker
         raise StandardError.new("tag '#{image[:name]}' may only follow another image definition")
       end
       images << image
-    end
-
-    def load_image(image)
-      return image if image[:image][:tag] || image[:image][:pull]
-      contents = image[:image][:contents]
-      contents ||= begin
-        object = @repository.object(image[:image])
-        raise StandardError.new "unrecognized image specification:\n'#{image[:image]}'" if object.nil?
-        object.fetch if object.outdated?
-        object.contents
-      end
-      image.merge({image: {contents: contents}})
     end
 
   end

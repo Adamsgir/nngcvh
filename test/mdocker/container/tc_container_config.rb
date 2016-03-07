@@ -100,8 +100,15 @@ module MDocker
       end
       expected << ['latest', 'latest', {}]
 
-      with_container_config(name: project_name) do |_, config|
+      with_container_config(name: project_name) do |_, config, repository|
         assert_equal expected, (config.images do |image|
+
+          object = repository.object(image[:image])
+          raise StandardError.new("unknown image location: '#{image[:image].to_yaml}'") unless object
+
+          object.fetch if object.outdated?
+          image[:image][:contents] ||= object.contents
+
           [image[:name], image[:image][:contents] || image[:image][:tag] || image[:image][:pull], image[:args]]
         end)
       end

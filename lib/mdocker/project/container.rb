@@ -6,8 +6,9 @@ module MDocker
 
     attr_reader :container_config
 
-    def initialize(container_config, docker:nil)
+    def initialize(container_config, docker:, repository:)
       @container_config = container_config
+      @repository = repository
       @docker = docker
     end
 
@@ -16,7 +17,7 @@ module MDocker
       digest.update(@container_config.name)
       digest = @container_config.images.inject(digest) do |d, image|
         d.update(image[:name])
-        contents = image[:image][:contents] || image[:image][:tag] || image[:image][:pull]
+        contents = image[:image][:tag] || image[:image][:pull] || docker_file_contents(image)
         d.update(contents)
         d.update(image[:args].to_s)
       end
@@ -45,6 +46,13 @@ module MDocker
 
     private
 
+    def docker_file_contents(image)
+      object = @repository.object(image[:image])
+      raise StandardError.new("unknown image location: '#{image[:image].to_yaml}'") unless object
+      object.fetch if object.outdated?
+      object.contents
+    end
+
     def do_build(build_name, lock={})
       lock[:hash] ||= build_hash
       lock[:images] = []
@@ -58,8 +66,7 @@ module MDocker
           name = "#{build_name}:#{image[:image][:tag]}"
           @docker.tag(previous, name)
         else
-          contents = image[:image][:contents]
-          contents = override_from(contents, previous)
+          contents = override_from(docker_file_contents(image), previous)
           @docker.build(name, contents, image[:args])
         end
         raise StandardError.new("docker build failed, rc=#{rc}") if rc != 0

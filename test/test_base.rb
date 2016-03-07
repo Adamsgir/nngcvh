@@ -77,9 +77,9 @@ module MDocker
 
         config = MDocker::ConfigFactory.new.create(*fixture.expand_paths(config_paths))
         config = MDocker::ConfigFactory.new.create(*[config.get(:project, default: {})], defaults: defaults)
-        container_config = MDocker::ContainerConfig.new(config, repository)
+        container_config = MDocker::ContainerConfig.new(config)
 
-        yield fixture, container_config
+        yield fixture, container_config, repository
       end
     end
 

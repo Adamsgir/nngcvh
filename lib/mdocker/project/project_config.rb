@@ -4,8 +4,7 @@ module MDocker
 
     attr_reader :config
 
-    def initialize(config, repository)
-      @repository = repository
+    def initialize(config)
       @config = init_containers(config)
     end
 
@@ -45,7 +44,7 @@ module MDocker
 
         # ensure container name
         container = container.defaults({name: name.to_s})
-        resolved << [container.get(:name).to_sym, ContainerConfig.new(container, @repository)]
+        resolved << [container.get(:name).to_sym, ContainerConfig.new(container)]
       end
 
       config.set(:containers, resolved.to_h)
