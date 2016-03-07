@@ -4,13 +4,14 @@ lib = File.expand_path File.join(File.dirname(__FILE__), '../lib')
 $LOAD_PATH.unshift(lib)
 
 require 'mdocker'
+require 'optparse'
 
 mdocker_command = ARGV.size > 0 ? ARGV[0] : 'run'
 begin
   case mdocker_command
-    when 'config'
+    when 'inspect'
       project = MDocker::ProjectFactory.new.create
-      puts project.config.to_s
+      project.inspect
     when 'clean'
       project = MDocker::ProjectFactory.new.create
       project.clean

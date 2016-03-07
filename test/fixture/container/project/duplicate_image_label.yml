@@ -8,13 +8,13 @@ project:
       group: test_user
       gid: 1000
       uid: 1000
-    ports:
-      - 4000: 4000
-      - 80: 80
-    volumes:
-      - ~/.m2
-      - ~/.gradle
-      - ~/.test: ~/.test
+  ports:
+    - 4000: 4000
+    - 80: 80
+  volumes:
+    - ~/.m2
+    - ~/.gradle
+    - ~/.test: ~/.test
 
   images:
     - tool_1:
@@ -22,4 +22,8 @@ project:
       args:
         name_1: value_1
     - tool_2:
-        pull: debian:jessie
+        path: test_tool_2
+      args:
+        name_2: value_2
+    - tool_2:
+        path: test_tool_2

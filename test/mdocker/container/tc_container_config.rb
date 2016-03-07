@@ -52,10 +52,6 @@ module MDocker
       }
     end
 
-    def test_no_images
-      assert_images 'no_images', [['base', 'debian:jessie', {}]]
-    end
-
     def test_tags
       assert_images 'tags',[['os', 'debian:jessie', {}], ['base_tag', 'base_tag', {}], ['base_tag2', 'base_tag2', {}]]
     end

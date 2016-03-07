@@ -1,49 +1,40 @@
 module MDocker
   class VolumesExpansion
 
-    def self.expand(volumes=[], roots_map: {})
+    def self.expand(volumes=[], root:'')
       Util::assert_type(Array, value: volumes)
-      Util::assert_type(Hash, value: roots_map)
-
       volumes.inject([]) do |result, image|
-        result << expand_volume(image, roots_map)
+        result << expand_volume(image, root)
       end
     end
 
     private
 
-    def self.expand_path(path, root, home)
-      path = home ? path.sub(/^~\//, home + '/') : path
-      root ? File.expand_path(path, root) : File.expand_path(path)
-    end
-
-    def self.expand_volume(volume, roots_map)
+    def self.expand_volume(volume, root)
       Util::assert_type(Hash, String, value: volume)
       case volume
         when String
           pair = volume.match(/(?<host>.+):(?<container>.+)/)
           if pair
-            expand_volume({host: pair[:host], container: pair[:container]}, roots_map)
+            expand_volume({host: pair[:host], container: pair[:container]}, root)
           else
-            expand_volume({host: volume, container: volume}, roots_map)
+            expand_volume({host: volume, container: volume}, root)
           end
         when Hash
           if volume.size == 1
             h, c = volume.first
             h = h.to_s
             c ||= h
-            expand_volume({host: h, container: c}, roots_map)
+            expand_volume({host: h, container: c}, root)
           elsif volume.size == 2 && volume[:host] && volume[:container]
             host = volume[:host].to_s
             container = volume[:container].to_s
-            host_root, container_root = roots_map[:root].first
-            host_home, container_home = roots_map[:home].first
             if named_container?(host)
               {host: host,
-               container: expand_path(container, container_root, container_home)}
+               container: container}
             else
-              {host: expand_path(host, host_root, host_home),
-               container: expand_path(container, container_root, container_home)}
+              {host: File.expand_path(host, root),
+               container: container}
             end
           else
             raise StandardError.new "unrecognized volume mapping definition:\n#{volume.to_yaml}"

@@ -1,113 +1,78 @@
-require 'digest/sha1'
-require 'yaml'
-
 module MDocker
   class Project
 
-    attr_reader :config
-
-    def initialize(project_config, lock_path="#{MDocker::Meta::NAME}.lock")
-      @config = project_config
+    def initialize(project_config, lock_path)
+      @project_config = project_config
       @lock_path = lock_path
     end
 
-    def build_hash
-      digest = Digest::SHA1.new
-      digest.update(@config.name)
-      digest = @config.images.inject(digest) do |d, image|
-        d.update(image[:name])
-        contents = image[:image][:contents] || image[:image][:tag] || image[:image][:pull]
-        d.update(contents)
-        d.update(image[:args].to_s)
-      end
-      digest.hexdigest!
+    def run
+      command = @project_config.command
+      build
+      name, container_config = @project_config.containers.to_a.last
+      lock = read_lock
+      image = lock[:containers][name][:images].last[:image]
+      create_docker.run(image, container_config, command)
     end
 
-    def run(label: 'latest', force_build:false)
-      unless @config.images.find { |image| image[:name] == label }
-        raise StandardError.new "image #{label} is not defined in this project"
+    def inspect(container_name=nil)
+      @project_config.containers do |name, container_config|
+        if container_name.nil? || container_name == name
+          puts name
+          puts container_config.to_s
+        end
       end
-      lock = build(force: force_build)
-      create_docker.run(lock[:build_name] + ':' + label)
     end
 
-    def build(force: false)
-      old_lock = read_lock
-      return old_lock unless force || needs_build?
-      lock = {}
+    def build
+      lock = read_lock
+      lock[:containers] ||= {}
+
+      new_lock = {containers: {}}
       begin
-        write_lock do_build(lock)
-        do_clean(old_lock)
+        @project_config.containers do |name, container_config|
+          container = create_container(container_config)
+          container_lock = lock[:containers][name.to_sym]
+          if container.needs_build?(container_lock)
+            new_lock[:containers][name.to_sym] = container.build
+          else
+            # was built
+            new_lock[:containers][name.to_sym] = lock[:containers].delete(name.to_sym)
+          end
+        end
+        if new_lock != lock
+          write_lock new_lock
+          do_clean lock
+        end
       rescue
-        do_clean(lock)
+        do_clean new_lock
         raise
       end
-      lock
     end
 
     def clean
-      do_clean read_lock
+      lock = read_lock
+      do_clean lock
       delete_lock
     end
 
     private
 
-    def needs_build?
-      lock = read_lock
-      return true if lock.nil?
-
-      docker = create_docker
-      has_images = (lock[:build_images] || []).each do |info|
-        _, name = info.first
-        break false unless docker.has_image?(name)
-      end
-
-      !has_images || build_hash != lock[:build_hash]
-    end
-
-    def do_build(lock={})
-      docker = create_docker
-
-      lock[:build_hash] ||= build_hash
-      lock[:build_name] ||= docker.generate_build_name(@config.name)
-      lock[:build_images] = []
-
-      @config.images.inject(nil) do |previous, image|
-        name = "#{lock[:build_name]}:#{image[:name]}"
-        rc = if image[:image][:pull]
-          rc = docker.has_image?(image[:image][:pull]) ? 0 : docker.pull(image[:image][:pull])
-          rc == 0 ? docker.tag(image[:image][:pull], name) : rc
-        elsif image[:image][:tag]
-          name = "#{lock[:build_name]}:#{image[:image][:tag]}"
-          docker.tag(previous, name)
-        else
-          contents = image[:image][:contents]
-          contents = override_from(contents, previous)
-          docker.build(name, contents, image[:args])
-        end
-        raise StandardError.new("docker build failed, rc=#{rc}") if rc != 0
-        lock[:build_images] << {image[:name] => name}
-        name
-      end
-      lock
-    end
-
-    def override_from(contents, previous=nil)
-      if previous
-        r = contents.sub(/^\s*FROM\s+.+$/i, 'FROM ' + previous)
-        r == contents ? "FROM #{previous}\n#{contents}" : r
-      else
-        contents.match(/^\s*FROM\s+.+$/i) ? contents : "FROM scratch\n#{contents}"
-      end
+    def create_container(container_config)
+      MDocker::Container.new(
+          container_config,
+          docker: create_docker)
     end
 
     def do_clean(lock)
-      return unless lock
-      docker = create_docker
-      (lock[:build_images] || []).each do |info|
-        _, image_name = info.first
-        docker.remove(image_name)
+      lock ||= read_lock
+      image_names = []
+      (lock[:containers] || {}).reverse_each do |_, container_lock|
+        (container_lock[:images] || []).reverse_each do |image|
+          image_names << image[:image]
+        end
       end
+      create_docker.remove(*image_names) unless image_names.empty?
     end
 
     def read_lock
@@ -138,7 +103,9 @@ module MDocker
     end
 
     def create_docker
-      MDocker::Docker.new @config
+      MDocker::Docker.new @project_config.docker_path
     end
+
+
   end
 end

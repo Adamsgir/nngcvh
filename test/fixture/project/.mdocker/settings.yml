@@ -1,5 +1,0 @@
-flavors:
-  base_image:
-    images:
-      - base:
-          pull: debian:jessie

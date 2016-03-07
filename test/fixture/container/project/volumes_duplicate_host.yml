@@ -3,23 +3,27 @@ project:
 
   container:
     hostname: test_hostname
-    root: true
     user:
       name: test_user
       group: test_user
       gid: 1000
       uid: 1000
-    ports:
-      - 4000: 4000
-      - 80: 80
-    volumes:
-      - ~/.m2
-      - ~/.gradle
-      - ~/.test: ~/.test
+  ports:
+    - 4000: 4000
+    - 80: 80
+  volumes:
+    - ~/host
+    - /host
+    - ~/.host: ~/.container
+    - named: /container
+    - ~/.host: ~/.path
+    - 10: /10
+    - 10.1: /10.1
+    - 11: ~/11
+    - true: /true
+    - false: /false
 
   images:
-    - os:
-        pull: debian:jessie
     - tool_1:
         path: test_tool_1
       args:

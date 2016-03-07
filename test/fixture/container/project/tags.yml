@@ -8,13 +8,13 @@ project:
       group: test_user
       gid: 1000
       uid: 1000
-    ports:
-      - 4000: 4000
-      - 80: 80
-    volumes:
-      - ~/.m2
-      - ~/.gradle
-      - ~/.test: ~/.test
+  ports:
+    - 4000: 4000
+    - 80: 80
+  volumes:
+    - ~/.m2
+    - ~/.gradle
+    - ~/.test: ~/.test
 
   images:
     - os:

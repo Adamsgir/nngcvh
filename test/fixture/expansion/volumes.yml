@@ -21,8 +21,8 @@ sugar:
     - "name:/path/to/container"
 
   host_expansion:
-    - host: "%{host.home}/path"
-      container: "%{container.home}/path"
+    - host: "%{host/home}/path"
+      container: "~/path"
     - host: ~/path
       container: ~/path
     - ~/path
@@ -30,36 +30,36 @@ sugar:
 
   container_expansion:
     - host: /path
-      container: "%{container.home}/path"
+      container: "~/path"
     - host: /path
       container: ~/path
     - /path: ~/path
 
   both_expansion:
-    - host: "%{host.home}/host"
-      container: "%{container.home}/container"
+    - host: "%{host/home}/host"
+      container: "~/container"
     - host: ~/host
       container: ~/container
     - ~/host: ~/container
 
   project_relative:
-    - host: "%{host.project}/path/dir"
-      container: "%{container.project}/path/dir"
+    - host: "%{host/project}/path/dir"
+      container: "path/dir"
     - host: path/dir
       container: path/dir
     - path/dir:
     - path/dir
 
   boolean:
-    - host: "%{host.project}/path/dir"
-      container: "%{container.project}/true"
+    - host: "%{host/project}/path/dir"
+      container: "true"
     - host: path/dir
       container: true
     - path/dir: true
 
   integer:
-    - host: "%{host.project}/path/dir"
-      container: "%{container.project}/10"
+    - host: "%{host/project}/path/dir"
+      container: "10"
     - host: path/dir
       container: 10
     - path/dir: 10

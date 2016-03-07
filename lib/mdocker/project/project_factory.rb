@@ -43,13 +43,13 @@ module MDocker
           File.join(project_dir, name + '.yml'),
           File.join(project_dir, dot_name + '.yml')
       ]
-      container_config = MDocker::ContainerConfig.new(config_files,
-                                                    repository,
-                                                    defaults: host_configuration(opts),
-                                                    overrides: user_configuration(opts))
+      config = MDocker::ConfigFactory.new.create(*config_files,
+                                          defaults: project_defaults(opts),
+                                          overrides: project_overrides(opts))
+      project_config = MDocker::ProjectConfig.new(config, repository)
 
-      project_lock_file = File.join(project_dir, dot_name, name + '.lock')
-      MDocker::Project.new(container_config, project_lock_file)
+      project_lock_file = File.join(project_dir, dot_name, name + '.yml')
+      MDocker::Project.new(project_config, project_lock_file)
     end
 
     private
@@ -66,30 +66,83 @@ module MDocker
       end
     end
 
-    def host_configuration(opts)
+    def project_defaults(opts)
       user_info = MDocker::Util::user_info
       user_home = File.expand_path(opts[:home])
-      { project: { host: {
-          working_directory: File.expand_path(opts[:pwd]),
-          project_directory: File.expand_path(opts[:project]),
-          user: {
-              name: user_info[:name],
-              uid: user_info[:uid],
-              gid: user_info[:gid],
-              home: user_home
+      {project:
+        {
+            name: Meta::NAME,
+            docker: { path: 'docker' },
+            host: {
+              project: {
+                path: File.expand_path(opts[:project]),
+              },
+              pwd: File.expand_path(opts[:pwd]),
+              user: {
+                  name: user_info[:name],
+                  group: user_info[:group],
+                  gid: user_info[:gid],
+                  uid: user_info[:uid],
+                  home: user_home,
+              },
+            },
+            images: [],
+            ports: [],
+            volumes: []
+        }
+      }
+    end
+
+    def project_overrides(opts)
+      opts[:command] ? { project: {command: opts[:command] }} : {}
+    end
+
+    def container_defaults
+      {
+        # defaults to project docker spec
+        docker: '%{project/docker}',
+        # defaults to project host spec
+        host: {
+          project: {
+            path: '%{project/host/project/path}',
           },
-          docker: {
-              path: 'docker'
+          pwd: '%{project/host/pwd}'
+        },
+        container: {
+          # defaults to container name
+          hostname: '%{../../name}',
+          detach: true,
+          interactive: false,
+          user: {
+            name: '%{project/host/user/name}',
+            uid: '%{project/host/user/uid}',
+            gid: '%{project/host/user/gid}',
+            # defaults to container user name
+            group: '%{../name}',
+            # defaults to home/container_user_name
+            home: '/home/%{../name}'
           }
-      }}}
+        },
+        images: [],
+        ports: [],
+        # map project dir to container project dir
+        volumes: [{
+          host: '%{../../host/project/path}',
+          container: '%{../../container/project/path}'
+        }],
+      }
     end
 
-    def user_configuration(opts)
-      opts[:command] ?
-      { project: { container: {
-          command: opts[:command]
-      }}} : {}
-    end
+    # for each container:
 
+    # 1. set container name if not already set
+    # 2. set user to root when user is not specified, ensure user.home
+    # 3. derive container.project.path from host.project.path replacing home part
+    # 3. set container.pwd as relative to host.project.path, then resolve.
+    # 4. remove volumes with empty host part
+    # 5. resolve volumes.container using container.user.home and container.project.path
+    # 6. resolve ports
+    # 7. resolve images
+    # 8. add user image if user is not 'root'
   end
 end

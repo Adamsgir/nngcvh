@@ -6,150 +6,153 @@ module MDocker
 
     attr_reader :config, :repository
 
-    def initialize(config_sources, repository, defaults:{}, overrides:{})
-      @config = create_config(config_sources, defaults: defaults, overrides: overrides)
+    def initialize(config, repository)
       @repository = repository
+      @config = init_container(init_user(config))
     end
 
     def name
-      effective_config.get(:project, :name)
+      @config.get(:name)
     end
 
     def images(&block)
-      get_values(:project, :images, &block)
+      get_values(:images, &block)
     end
 
     def volumes(&block)
-      get_values(:project, :container, :volumes, &block)
+      get_values(:volumes, &block)
     end
 
     def ports(&block)
-      get_values(:project, :container, :ports, &block)
+      get_values(:ports, &block)
     end
 
     def command(&block)
-      get_values(:project, :container, :command, &block)
-    end
-
-    def docker_path
-      effective_config.get(:project, :host, :docker, :path)
+      get_values(:container, :command, &block)
     end
 
     def hostname
-      effective_config.get(:project, :container, :hostname)
+      @config.get(:container, :hostname)
     end
 
     def working_directory
-      effective_config.get(:project, :container, :working_directory)
-    end
-
-    def effective_config
-      @effective_config ||= resolve_ports (resolve_paths (resolve_images (flavor_config config)))
-    end
-
-    def reload
-      @effective_config = nil
+      @config.get(:container, :pwd)
     end
 
     def to_s
-      effective_config.to_s
+      @config.to_s
     end
 
     private
 
-    MERGE_CONFIG_ARRAYS = [
-        [:project, :images],
-        [:project, :container, :volumes],
-        [:project, :container, :ports],
-    ]
-
-    def merge_config_arrays(key, a1, a2)
-      MERGE_CONFIG_ARRAYS.include?(key) ? (a1 + a2) : (a2)
-    end
-
-    def create_config(sources=[], defaults: {}, overrides: {})
-      sources = [defaults] + sources + [overrides]
-      MDocker::Config.new(sources, array_merger: method(:merge_config_arrays))
-    end
-
     def get_values(*path, &block)
-      effective_config.get(*path, default:[]).map do |value|
+      @config.get(*path, default:[]).map do |value|
         block ? block.call(value) : value
       end
     end
 
-    def flavor_config(config)
-      flavors = [
-          {name: MDocker::Meta::NAME},
-          {images: []},
-          {container: { hostname: 'docker' }},
-          {container: { command: %w(/bin/bash -l) } },
-          ]
-      if container_user_root?(config)
-        flavors += [{container: { user: { name: 'root', uid: 0, gid: 0, group: 'root', home: '/root' }}}]
-      else
-        flavors += [
-          {container: { user: config.get(:project, :host, :user) } },
-          {container: { user: { group: '%{project.container.user.name}' }}},
-          {container: { user: { home: '/home/%{project.container.user.name}' }}},
-        ]
-      end
-      flavors += [config.get(:flavors, config.get(:project, :flavor, default:'default'), default:{})]
-      flavors.inject(create_config) { |cfg, flavor| cfg + {project: flavor} } + config
-    end
-
-    def resolve_paths(config)
-      host_working_dir = config.get(:project, :host, :working_directory)
-      host_project_dir = config.get(:project, :host, :project_directory)
-      host_home = config.get(:project, :host, :user, :home)
-      container_home = config.get(:project, :container, :user, :home)
-      container_project_dir = host_project_dir.sub(/^#{host_home + File::SEPARATOR}/, container_home + File::SEPARATOR)
-      container_working_dir = host_working_dir.sub(/^#{host_home + File::SEPARATOR}/, container_home + File::SEPARATOR)
-
-      config = config.set(:project, :container, :working_directory, container_working_dir)
-      config = config.set(:project, :container, :project_directory, container_project_dir)
-
-      paths_map = {
-          home: {host_home => container_home},
-          root: {host_project_dir => container_working_dir},
-      }
-      volumes = VolumesExpansion::expand(config.get(:project, :container, :volumes, default:[]), roots_map:paths_map)
-
-      volumes = volumes.inject([]) do |result, volume|
-        if result.find { |v| v[:host] == volume[:host] || v[:container] == volume[:container] }
-          raise StandardError.new("duplicate volume definition: '#{volume[:host]}:#{volume[:container]}'")
+    def init_user(config)
+      if config.get(:container, :user)
+        host_user_info = config.get(:host, :user)
+        config = config.defaults({ container: { user: {
+            name: host_user_info[:name], uid: host_user_info[:uid], gid: host_user_info[:gid] }}})
+        if host_user_info[:name] == host_user_info[:group]
+          config = config.defaults({ container: { user: { group: '%{../name}' }}})
+        else
+          config = config.defaults({ container: { user: { group: host_user_info[:group] }}})
         end
-        result << volume
+      else
+        config = config.set(:container, :user, {name: 'root', group: 'root', uid: 0, gid: 0, home: '/root'})
       end
-      unless volumes.find { |v| v[:host] == host_project_dir || v[:container] == container_project_dir }
-        volumes << {host: host_project_dir, container: container_project_dir }
+
+      # ensure user home
+      user_info = config.get(:container, :user)
+      unless user_info[:home]
+        user_home = user_info[:name] == 'root' ? '/root' : '/home/' + user_info[:name]
+        config = config.set(:container, :user, :home, user_home)
       end
-      config.set(:project, :container, :volumes, volumes)
+
+      # resolve container project dir and pwd if project dir is set for host
+      if config.get(:host, :project, :path)
+        host_project_dir = config.get(:host, :project, :path)
+        host_home = config.get(:host, :user, :home)
+        container_home = config.get(:container, :user, :home)
+        container_project_dir = host_project_dir.sub(/^#{host_home + File::SEPARATOR}/, container_home + File::SEPARATOR)
+
+        pwd = config.get(:host, :pwd)
+        pwd = pwd.sub(/^#{config.get(:host, :project, :path) + File::SEPARATOR}/, '')
+        pwd = pwd.sub(/^#{host_home + File::SEPARATOR}/, container_home + File::SEPARATOR)
+        pwd = File.expand_path pwd, container_project_dir
+
+        config = config.defaults({container: { project: { path: container_project_dir }, pwd: pwd} })
+      end
+      config
     end
 
-    def resolve_ports(config)
-      ports = config.get(:project, :container, :ports, default: [])
-      ports = PortsExpansion::expand(ports)
-      config.set(:project, :container, :ports, ports)
-    end
+    def init_container(config)
+      config = init_volumes(config)
 
-    def resolve_images(config)
-      images = ImagesExpansion::expand(config.get(:project, :images, default:[]))
+      ports = config.get(:ports, default: [])
+      config = config.set(:ports, PortsExpansion::expand(ports))
+
+      images = ImagesExpansion::expand(config.get(:images, default:[]))
       images = images.inject([], &method(:validate_image))
 
       raise StandardError.new 'no images defined' if images.empty?
 
-      images = add_or_replace_user_image(config, images) unless container_user_root?(config)
+      unless config.get(:container, :user, :name) == 'root'
+        images = add_or_replace_user_image(images, config.get(:container, :user))
+      end
+
       images = images + [{name: LATEST_LABEL, image: {tag: LATEST_LABEL}}]
       images = images.each {|i| i[:args] ||= {}}
       images = images.map(&method(:load_image))
 
-      config.set(:project, :images, images)
+      config.set(:images, images)
     end
 
-    def add_or_replace_user_image(config, images)
+    def init_volumes(config)
+      root = config.get(:container, :project, :path)
+      home = config.get(:container, :user, :home)
+
+      volumes = VolumesExpansion::expand(config.get(:volumes, default:[]), root: root)
+      volumes = volumes.inject([]) do |resolved, volume|
+        next resolved unless volume[:host]
+        volume[:container] = expand_container_path(volume[:container], root: root, home: home)
+        resolved << volume
+      end
+
+      if config.get(:container, :project, :path) && config.get(:host, :project, :path)
+        container_path = config.get(:container, :project, :path)
+        container_path = expand_container_path(container_path, root: root, home: home)
+        volumes = volumes + [{host: config.get(:host, :project, :path), container: container_path}]
+      end
+
+      volumes = volumes.inject([]) do |resolved, volume|
+        host = volume[:host]
+        container = volume[:container]
+        if resolved.find { |c| c[:host] == host || c[:container] == container }
+          raise StandardError.new "duplicate volume mapping in container '#{config.get(:name)}':\n#{volume.to_yaml}"
+        end
+        resolved << volume
+      end
+
+      pwd = config.get(:container, :pwd)
+      config = config.set(:container, :pwd, expand_container_path(pwd, root: root, home: home)) if pwd
+
+      config.set(:volumes, volumes)
+    end
+
+    def expand_container_path(path, root:nil, home:nil)
+      return nil unless path
+
+      path = path.sub(/^#{'~' + File::SEPARATOR}/, home + File::SEPARATOR) if home
+      File.expand_path path, root
+    end
+
+    def add_or_replace_user_image(images, user_info)
       docker_file = File.expand_path File.join(MDocker::Util::dockerfiles_dir, 'user')
-      user_image = {name: USER_LABEL, image: {path: docker_file}, args: config.get(:project, :container, :user)}
+      user_image = {name: USER_LABEL, image: {path: docker_file}, args: user_info}
       existing = images.find { |i| i[:name] == USER_LABEL }
       if existing
         existing[:image] = user_image[:image]
@@ -182,10 +185,6 @@ module MDocker
         object.contents
       end
       image.merge({image: {contents: contents}})
-    end
-
-    def container_user_root?(config)
-      config.get(:project, :container, :root, default:false)
     end
 
   end

@@ -7,12 +7,9 @@ module MDocker
 
     def test_volumes_expansion
       with_config('expansion', %w(volumes.yml)) do |config|
-        paths_map = {
-          home: {config.get(:host, :home) => config.get(:container, :home)},
-          root: {config.get(:host, :project) => config.get(:container, :project)},
-        }
+        config = config.set(:host, :home, Dir.home)
         config.get(:sugar).each do |_, v|
-          expanded = VolumesExpansion::expand(v, roots_map: paths_map)
+          expanded = VolumesExpansion::expand(v, root: config.get(:host, :project))
           expanded.each { |e| assert_equal v[0], e}
         end
       end

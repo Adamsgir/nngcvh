@@ -4,13 +4,13 @@ module MDocker
 
   class Docker
 
-    def initialize(config)
-      @config = config
+    def initialize(path)
+      @path = path
     end
 
     def generate_build_name(project_name)
       while true
-        name = "#{project_name}-#{MDocker::Util::random_string(8)}"
+        name = project_name.gsub(/%\{rand\}/, MDocker::Util::random_string(8))
         break name unless has_image?(name)
       end
     end
@@ -36,19 +36,19 @@ module MDocker
       docker('build', *command_args, input: contents, mute: false)
     end
 
-    def run(image_name)
+    def run(image_name, container_config, command)
       command_args =  []
       command_args << '--rm'
       command_args << '-ti'
       command_args << '-h'
-      command_args << @config.hostname
+      command_args << container_config.hostname
       command_args << '-w'
-      command_args << @config.working_directory
-      @config.volumes do |volume|
+      command_args << container_config.working_directory
+      container_config.volumes do |volume|
         command_args << '-v'
         command_args << "#{volume[:host]}:#{volume[:container]}"
       end
-      @config.ports do |port|
+      container_config.ports do |port|
         if port[:mapping] == :ALL
           command_args << '-P'
         else
@@ -57,7 +57,7 @@ module MDocker
         end
       end
       command_args << image_name
-      command_args += @config.command
+      command_args += command if command
       docker('run', *command_args, shell:true)
     end
 
@@ -73,7 +73,7 @@ module MDocker
     private
 
     def docker(command, *args, input:nil, mute:true, shell: false)
-      command_line = [@config.docker_path, command] + args
+      command_line = [@path, command] + args
       command_line = command_line.shelljoin
       puts command_line
       if shell

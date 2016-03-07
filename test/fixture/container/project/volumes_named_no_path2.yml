@@ -8,19 +8,11 @@ project:
       group: test_user
       gid: 1000
       uid: 1000
-    ports:
-      - 4000: 4000
-      - 80: 80
-    volumes:
-      - ~/host
-      - /host
-      - ~/.host: ~/.container
-      - named: /container
-      - 10: /10
-      - 10.1: /10.1
-      - 11: ~/11
-      - true: /true
-      - false: /false
+  ports:
+    - 4000: 4000
+    - 80: 80
+  volumes:
+    - named
 
   images:
     - tool_1:

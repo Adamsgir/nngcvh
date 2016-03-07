@@ -11,11 +11,12 @@ module MDocker
       @raw = load_config sources
     end
 
-    def get(*path, default:nil, stack:[])
-      return interpolate(@raw, []) if (path.nil? or path.empty?)
-      key = path.map {|s| s.to_s}.join('.')
-      raise StandardError.new "self referencing loop detected for '#{key}'" if stack.include? key
-      interpolate(find_value(key.split('.'), @raw), stack + [key]) || default
+    def get(*path, base:[], default:nil, stack:[])
+      path = path.map {|s| s.to_s.split('/') }.flatten.map { |s| s.to_sym }
+      path = expand_path(*path, base:base)
+      raise StandardError.new "self referencing loop detected for '#{path}'" if stack.include? path
+      value = find_value path, @raw
+      interpolate(path, value, stack + [path]) || default
     end
 
     def set(*path, value)
@@ -29,7 +30,15 @@ module MDocker
     end
 
     def +(config)
+      append(config)
+    end
+
+    def append(config)
       Config.new([@raw, config], array_merger: @array_merger)
+    end
+
+    def defaults(config)
+      Config.new([config, @raw], array_merger: @array_merger)
     end
 
     def ==(config)
@@ -55,21 +64,34 @@ module MDocker
       end
     end
 
-    def interpolate(value, stack)
+    def expand_path(*key, base:[])
+      key.inject([]) do |result, part|
+        case part
+          when :'..'
+            result.empty? ? base[0...-1] : result[0...-1]
+          when :'.'
+            result.empty ? base : result
+          else
+            result << part
+        end
+      end
+    end
+
+    def interpolate(key, value, stack)
       case value
       when Array
-        value.map { |item| interpolate(item, stack) }
+        value.each_with_index.map { |item, index| interpolate(key + [index.to_s], item, stack) }
       when Hash
-        value.map { |k,v| [k, interpolate(v, stack)] }.to_h
+        value.map { |k,v| [k, interpolate(key + [k], v, stack)] }.to_h
       when String
-        key = value[/^%{([^%{}]+)}$/, 1]
-        if key
-          get(key, default:value, stack:stack)
+        reference = value[/^%{([^%{}]+)}$/, 1]
+        if reference
+          get(reference, base: key, default:value, stack:stack)
         else
           new_value = value.scan(/%{[^%{}]+}/).uniq.inject(value) do |str, k|
-            str.gsub(k, interpolate(k, stack).to_s)
+            str.gsub(k, interpolate(key, k, stack).to_s)
           end
-          new_value == value ? new_value : interpolate(new_value, stack)
+          new_value == value ? new_value : interpolate(key, new_value, stack)
         end
       else
         value
@@ -79,21 +101,20 @@ module MDocker
     def find_value(key_segments, hash)
       if key_segments.empty?
         hash
-      elsif hash.nil?
+      elsif hash.nil? || hash.empty?
         nil
       elsif Array === hash
         begin
-          find_value(key_segments.drop(1), hash[Integer(key_segments[0])])
+          index = Integer(key_segments.take(1).first.to_s)
+          find_value(key_segments.drop(1), hash[index])
         rescue
           nil
         end
+      elsif Hash === hash
+        find_value(key_segments.drop(1), hash[key_segments.first])
       else
-        keys = key_segments.inject([[]]) { |array, segment| array << (array.last + [segment]) }
-        keys = keys.drop(1).reverse
-        keys.detect do |key|
-          value = find_value(key_segments.drop(key.length), hash[key.join('.').to_sym])
-          break value if value
-        end
+        # todo try to interpolate, otherwise 'get' may not work properly(
+        nil
       end
     end
 

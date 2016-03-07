@@ -37,8 +37,10 @@ module MDocker
     def self.user_info
       user_name = Etc.getlogin
       user_info = Etc.getpwnam user_name
+      group_info = Etc.getgrgid(user_info.gid)
       {
           name: user_name,
+          group: group_info.name,
           uid: user_info.uid,
           gid: user_info.gid,
       }
