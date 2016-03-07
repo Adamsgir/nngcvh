@@ -25,7 +25,7 @@ module MDocker
         end
         break File.read(path) if File.file?(path) && File.readable?(path)
       end
-      raise IOError.new("no file found for #{location}") if contents.nil?
+      raise IOError.new("no file found at '#{location[:paths].join("','")}'") if contents.nil?
       contents
     end
 
