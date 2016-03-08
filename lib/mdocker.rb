@@ -1,5 +1,7 @@
 require 'mdocker/meta'
 require 'mdocker/util'
+require 'mdocker/tar'
+
 
 require 'mdocker/config/config'
 require 'mdocker/config/images_expansion'

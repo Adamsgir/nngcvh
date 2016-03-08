@@ -10,3 +10,5 @@ require_relative 'mdocker/config/tc_volumes_expansion'
 require_relative 'mdocker/config/tc_ports_expansion'
 
 require_relative 'mdocker/container/tc_container_config'
+
+require_relative 'mdocker/tar/tc_tar'
