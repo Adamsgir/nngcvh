@@ -33,6 +33,7 @@ module MDocker
     end
 
     def fetch
+      #
       local = fetch_local
       origin = fetch_origin
 
@@ -49,6 +50,14 @@ module MDocker
       else
         false
       end
+    end
+
+    def open(&block)
+      if !File.exist?(@lock_path) || (File.file?(@lock_path) && @threshold >= @provider.update_price)
+        FileUtils::mkdir_p File.dirname(@lock_path)
+        File.open(@lock_path, mode:'w') { |out| @provider.read_origin(@origin, out) }
+      end
+      File.open(@lock_path, mode:'r', &block)
     end
 
     def contents

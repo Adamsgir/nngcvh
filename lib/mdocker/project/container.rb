@@ -17,8 +17,11 @@ module MDocker
       digest.update(@container_config.name)
       digest = @container_config.images.inject(digest) do |d, image|
         d.update(image[:name])
-        contents = image[:image][:tag] || image[:image][:pull] || docker_file_contents(image)
-        d.update(contents)
+        if image[:image][:tag] || image[:image][:pull]
+          d.update(image[:image][:tag] || image[:image][:pull])
+        else
+          d.update(image_context_hash(image))
+        end
         d.update(image[:args].to_s)
       end
       digest.hexdigest!
@@ -41,16 +44,41 @@ module MDocker
       has_images = (lock[:images] || []).each do |image|
         break false unless @docker.has_image?(image[:image])
       end
-      !has_images || (build_hash != lock[:hash])
+      return true unless has_images
+      lock[:hash] != build_hash
     end
 
     private
 
-    def docker_file_contents(image)
+    def image_context_hash(image)
+      object = @repository.object(image[:image])
+      d = Digest::SHA1.new
+      raise StandardError.new("unknown image location: '#{image[:image].to_yaml}'") unless object
+      object.open do |stream|
+        TarUtil::untar(src: stream) do |entry:|
+          d.update(entry.full_name)
+          if entry.file? && entry.size > 0
+            while (data = entry.read(256))
+              d.update(data)
+            end
+          end
+        end
+      end
+      d.hexdigest!
+    end
+
+    def build_context(image, previous:nil, target:)
       object = @repository.object(image[:image])
       raise StandardError.new("unknown image location: '#{image[:image].to_yaml}'") unless object
-      object.fetch if object.outdated?
-      object.contents
+      object.open do |stream|
+        TarUtil::filter(src: stream, dst: target) do |entry:|
+          if 'Dockerfile' == entry.full_name
+            DockerFile.new(contents: entry.read).with_from(previous)
+          else
+            nil
+          end
+        end
+      end
     end
 
     def do_build(build_name, lock={})
@@ -66,8 +94,10 @@ module MDocker
           name = "#{build_name}:#{image[:image][:tag]}"
           @docker.tag(previous, name)
         else
-          contents = override_from(docker_file_contents(image), previous)
-          @docker.build(name, contents, image[:args])
+          context_provider = Proc.new do |out|
+            build_context(image, previous: previous, target:out)
+          end
+          @docker.build(name, context_provider, image[:args])
         end
         raise StandardError.new("docker build failed, rc=#{rc}") if rc != 0
         lock[:images] << {label: image[:name], image: name}
@@ -76,19 +106,10 @@ module MDocker
       lock
     end
 
-    def override_from(contents, previous=nil)
-      if previous
-        r = contents.sub(/^\s*FROM\s+.+$/i, 'FROM ' + previous)
-        r == contents ? "FROM #{previous}\n#{contents}" : r
-      else
-        contents.match(/^\s*FROM\s+.+$/i) ? contents : "FROM scratch\n#{contents}"
-      end
-    end
-
     def do_clean(lock)
       return unless lock
       images = (lock[:images] || []).reverse.inject([]) do |images, image|
-        images << name + ':' + image[:label]
+        images << image[:image]
       end
       @docker.remove(*images) unless images.empty?
     end

@@ -22,5 +22,19 @@ module MDocker
       raise 'RepositoryProvider.fetch_origin_contents is an abstract method'
     end
 
+    def load_ignores(path)
+      return DockerIgnore.new(contents: '') unless path
+
+      ignore_file = File.join(path, '.dockerignore')
+      contents =
+          if File.file?(ignore_file) && File.readable?(ignore_file)
+            File.read(ignore_file)
+          else
+            ''
+          end
+      DockerIgnore.new(contents: contents)
+    end
+
+
   end
 end

@@ -13,15 +13,15 @@ module MDocker
 
     def untar_to_dir(src, dst)
       File::open(src, 'r') do |tar_io|
-        TarUtil::untar(src:tar_io) do |entry:, writer:|
+        TarUtil::untar(src:tar_io) do |entry:|
           full_path = File.join(File.join(dst, entry.full_name))
           if entry.directory?
             FileUtils::mkdir_p(full_path)
           elsif entry.file?
             FileUtils::mkdir_p(File.dirname(full_path))
-            File::open(full_path, 'w') { |io| writer.call(entry, io) }
+            File::open(full_path, 'w') { |io| io.write(entry.read) }
           end
-          FileUtils::chmod(entry.header.mode, full_path)
+          FileUtils::chmod(entry.mode, full_path)
         end
       end
     end
@@ -63,10 +63,9 @@ module MDocker
 
         File::open(dst, 'r') do |src_tar_io|
           File::open(filtered, 'w') do |dst_tar_io|
-            TarUtil::filter(src:src_tar_io, dst:dst_tar_io) do |entry:, dst:, writer:|
-              writer.call(entry, dst)
-              entry.rewind
-              writer.call(entry, dst)
+            TarUtil::filter(src:src_tar_io, dst:dst_tar_io) do |entry:|
+              data = entry.read
+              data * 2
             end
           end
         end

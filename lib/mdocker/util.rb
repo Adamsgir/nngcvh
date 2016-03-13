@@ -7,7 +7,13 @@ module MDocker
     def self.run_command(command, input, mute)
       Open3.popen3(command) do |stdin, stdout, stderr, thread|
         unless input.nil?
-          stdin.puts input
+          if String === input
+            stdin.puts input
+          elsif IO === input
+            IO::copy_stream(input, stdin)
+          elsif Proc === input
+            input.call(stdin)
+          end
           stdin.close
         end
         gobblers = []

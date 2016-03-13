@@ -48,11 +48,21 @@ module MDocker
                                           overrides: project_overrides(opts))
       project_config = MDocker::ProjectConfig.new(config)
 
-      project_lock_file = File.join(project_dir, dot_name, name + '.yml')
-      MDocker::Project.new(project_config, lock_path:project_lock_file, repository: repository)
+      project_lock_file = lock_file_path(File.join(project_dir, name + '.yml'))
+      MDocker::Project.new(project_config, lock_path: project_lock_file, repository: repository)
     end
 
     private
+
+    def lock_file_path(project_file)
+      home_dir = Dir.home
+      config_dir = File.join(home_dir, '.config')
+      hash = Digest::SHA1.new.update(project_file).hexdigest!
+
+      File.directory?(config_dir) ?
+          File.join(config_dir, Meta::NAME, 'projects', hash) :
+          File.join(home_dir, '.' + Meta::NAME, 'projects', hash)
+    end
 
     def look_up(base_path, file_name)
       if File.readable? File.join(base_path, file_name)

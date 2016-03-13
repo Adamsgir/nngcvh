@@ -15,6 +15,8 @@ require 'mdocker/repository/path_provider'
 require 'mdocker/repository/absolute_path_provider'
 require 'mdocker/repository/git_provider'
 require 'mdocker/repository/docker_provider'
+require 'mdocker/repository/docker_file'
+require 'mdocker/repository/docker_ignore'
 
 require 'mdocker/project/config_factory'
 require 'mdocker/project/docker'
